@@ -1,0 +1,26 @@
+version: '3.2'
+
+services:
+  robocop_api:
+    image: robocop_api:latest
+    build:
+      context: ./robocop_api
+      dockerfile: ./docker/Dockerfile
+      args:
+        http_proxy: ''
+        https_proxy: ''
+    ports:
+      - "${ROBOCOP_API_EXTERNAL_PORT}:6300"
+    networks:
+      - robocop
+    volumes:
+      - ./robocop_api:/app/robocop_api
+    healthcheck:
+      test: curl --fail 0.0.0.0:6300/health || exit 1
+      interval: 15s
+      timeout: 30s
+      retries: 5
+    restart: unless-stopped
+
+networks:
+  robocop:
