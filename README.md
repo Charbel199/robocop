@@ -14,6 +14,7 @@ The following hardware components are used in this project:
 - 2 * IR sensors
 - Arduino
 - Raspberry Pi 4
+- Power Bank
 - SD Card
 - SD Card reader (And adapter if needed)
 
@@ -32,7 +33,7 @@ The output actions of the fuzzy logic controller include the speed of each wheel
 This project is licensed under the MIT License. See the LICENSE file for details.
 
 ## Developers
-This project was inspired by the need to improve road safety and reduce traffic violations. We would like to acknowledge the contributions of the open-source community and the developers of the fuzzy logic libraries used in this project.
 
-
-
+- [Georges Daou](https://github.com/George1044)
+- [Charbel Bou Maroun](https://github.com/Charbel199)
+- [Khaled Jalloul](https://github.com/khaledjalloul)
