@@ -23,42 +23,36 @@ from pmd_camera_utils.roypy_platform_utils import PlatformHelper
 
 import numpy as np
 import cv2
+from utils.dir_utils import get_next_number
 
-
-def adjustZValue(zValues):
+def clamp_values(values, maximum_value):
     """
     Adjusts the z value based on some criteria.
     """
-    clampedDist = np.minimum(5, zValues)
-    newZValues = clampedDist / 5 * 255
-    return newZValues
-
-
-# Map the gray values from the camera to 0..255
-def adjustGrayValue(grayValues):
-    """
-    Adjusts the gray value based on some criteria.
-    """
-    clampedVal = np.minimum(800, grayValues)
-    newGrayValues = clampedVal / 800 * 255
-    return newGrayValues
+    clamped_values = np.minimum(maximum_value, values)
+    new_values = clamped_values / maximum_value * 255
+    return new_values
 
 
 def key_listener(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
         print(f"Left button pressed")
+        gray = param['gray']
+        depth = param['depth']
+        stack = param['stack']
+        print(f"Depth shape {depth.shape}, gray shape {gray.shape}, stack shape {stack.shape}")
+        next_number = get_next_number('./data')
+        cv2.imwrite(f'./data/depth_{next_number}.png', depth)
+        cv2.imwrite(f'./data/gray_{next_number}.png', gray)
+        print(f"Data saved #{next_number}")
 
-        data = param['data']
-        print(f"Data shape before save {data.shape}")
-        cv2.imwrite('output.jpg', data)
-        print(f"Data saved")
 
 class MyListener(roypy.IDepthDataListener):
     def __init__(self, q):
         super(MyListener, self).__init__()
         self.frame = 0
         self.done = False
-        self.undistortImage = False
+        self.undistort_image = False
         self.lock = threading.Lock()
         self.once = False
         self.queue = q
@@ -78,27 +72,28 @@ class MyListener(roypy.IDepthDataListener):
         gray = data[:, :, 4]
         confidence = data[:, :, 5]
 
-        zImage = np.zeros(depth.shape, np.float32)
-        grayImage = np.zeros(depth.shape, np.float32)
+        z_image = np.zeros(depth.shape, np.float32)
+        gray_image = np.zeros(depth.shape, np.float32)
 
         # Pre-process Depth and Gray values
         mask = confidence > 0
-        zImage[mask] = adjustZValue(depth[mask])
-        grayImage[mask] = adjustGrayValue(gray[mask])
+        z_image[mask] = clamp_values(depth[mask], maximum_value=5)
+        gray_image[mask] = clamp_values(gray[mask], maximum_value=800)
 
-        zImage8 = np.uint8(zImage)
-        grayImage8 = np.uint8(grayImage)
+        z_image8 = np.uint8(z_image)
+        gray_image8 = np.uint8(gray_image)
 
         # apply undistortion
-        if self.undistortImage:
-            zImage8 = cv2.undistort(zImage8, self.cameraMatrix, self.distortionCoefficients)
-            grayImage8 = cv2.undistort(grayImage8, self.cameraMatrix, self.distortionCoefficients)
+        if self.undistort_image:
+            z_image8 = cv2.undistort(z_image8, self.cameraMatrix, self.distortionCoefficients)
+            gray_image8 = cv2.undistort(gray_image8, self.cameraMatrix, self.distortionCoefficients)
 
+        stack = np.stack([z_image8, gray_image8], axis=-1)
         # finally show the images
-        cv2.namedWindow("Depth")
-        cv2.imshow('Depth', zImage8)
-        cv2.imshow('Gray', grayImage8)
-        cv2.setMouseCallback("Depth", key_listener, {'data': grayImage8})
+        cv2.namedWindow("Gray")
+        cv2.imshow('Gray', gray_image8)
+        # cv2.imshow('Gray', grayImage8)
+        cv2.setMouseCallback("Gray", key_listener, {'gray': gray_image8, 'depth': z_image8, 'stack': stack})
 
         self.lock.release()
         self.done = True
@@ -126,7 +121,7 @@ class MyListener(roypy.IDepthDataListener):
 
     def toggleUndistort(self):
         self.lock.acquire()
-        self.undistortImage = not self.undistortImage
+        self.undistort_image = not self.undistort_image
         self.lock.release()
 
     # Map the depth values from the camera to 0..255
