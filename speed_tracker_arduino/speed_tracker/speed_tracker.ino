@@ -1,26 +1,33 @@
+#include <ros.h>
+#include <std_msgs/Float32.h>
 
 // PIN declarations
-const int IR1=2; // first IR pin
-const int IR2=3; // second IR pin
-int LED_PIN=52; // led pin, lights up when first sensor active, down when second
-float DISTANCE=15; // disntace in cm between sensors
-
-// timers 
-unsigned  long t1=0;
-unsigned long t2=0; 
+#define IR1 2 // first IR pin
+#define IR2 3 // second IR pin
+#define LED_PIN 52 // led pin, lights up when first sensor active, down when second
+#define DISTANCE 15 // disntace in cm between sensors
 
 //velocity 
 float velocity;
 
 //helpers
-float time_first;
-float time_second;
+long time_first;
+long time_second;
 float delta;
 bool passed = false;
 
+//rosserial setup
+ros::NodeHandle nh;
+std_msgs::Float32 velocity_msg;
+char val_str[2];
+
+ros::Publisher pub_velocity("/speed_tracker/velocity", &velocity_msg);
+
 void  setup()
 {
-  Serial.begin(9600);
+  nh.initNode();
+  nh.advertise(pub_velocity);
+  
   pinMode(IR1, INPUT_PULLUP);
   pinMode(IR2, INPUT_PULLUP);
   pinMode(LED_PIN, OUTPUT);
@@ -31,13 +38,17 @@ void  setup()
 void loop()
 {
   int val = digitalRead(IR1);
+  String(val).toCharArray(val_str,2);
+  nh.loginfo(val_str);
+
+  nh.spinOnce();
+  delay(50);
 }
 
 void infrared_1()
 {
   if(!passed){
     time_first = millis();
-    Serial.println("IR1 TRIGG");
     digitalWrite(LED_PIN, HIGH);
     passed = true;
     }
@@ -50,11 +61,10 @@ void infrared_2()
     Serial.println("IR2 TRIGG");
     delta = time_second - time_first;
     velocity = (DISTANCE/delta)*10; // in m/s
+    velocity_msg.data = velocity;
     delay(30);
     digitalWrite(LED_PIN, LOW);
-    Serial.print("The velocity is: ");
-    Serial.print(velocity);
-    Serial.println(" m/s.");
+    pub_velocity.publish(&velocity_msg);
     passed = false;
   }
 }
