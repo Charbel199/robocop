@@ -7,6 +7,8 @@
 #define PING_PIN1 50 // first ultrasound ping pin 
 #define PING_PIN2 51 // second ultrasound ping pin
 #define LED_PIN 52 // led pin, lights up when first sensor active, down when second
+
+// constants
 #define DISTANCE 15 // disntace in cm between sensors
 
 //velocity 
@@ -35,13 +37,13 @@ void  setup()
   pinMode(LED_PIN, OUTPUT);
   pinMode(PING_PIN1, OUTPUT);
   pinMode(PING_PIN2, OUTPUT);
-  attachInterrupt(digitalPinToInterrupt(ECHO1), echo_1, FALLING);
-  attachInterrupt(digitalPinToInterrupt(ECHO2), echo_2, FALLING);
+  attachInterrupt(digitalPinToInterrupt(ECHO1), echo_1, RISING);
+  attachInterrupt(digitalPinToInterrupt(ECHO2), echo_2, RISING);
 }
 
 void loop()
 {
-  int val = digitalRead(IR1);
+  int val = digitalRead(ECHO1);
   String(val).toCharArray(val_str,2);
   nh.loginfo(val_str);
 
