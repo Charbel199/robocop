@@ -43,7 +43,9 @@ while(cap.isOpened()):
     # capture each frame of the video
     ret, frame = cap.read()
     frame = cv2.resize(frame, (224, 171))
+    # frame [:,:,2]= frame[:,:,1]
 
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     print(frame.shape)
     if ret == True:
         # get the start time
