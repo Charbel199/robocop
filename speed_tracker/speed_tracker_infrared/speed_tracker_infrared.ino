@@ -24,6 +24,7 @@ char val_str[2];
 ros::Publisher pub_velocity("/speed_tracker/velocity", &velocity_msg);
 
 void  setup()
+
 {
   nh.initNode();
   nh.advertise(pub_velocity);
@@ -39,7 +40,7 @@ void loop()
 {
   int val = digitalRead(IR1);
   String(val).toCharArray(val_str,2);
-  nh.loginfo(val_str);
+  //nh.loginfo(val_str);
 
   nh.spinOnce();
   delay(50);
