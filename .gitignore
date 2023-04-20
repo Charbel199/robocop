@@ -168,5 +168,16 @@ AzureKinect/Azure-Kinect-Sensor-SDK-develop
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
+
+
+# Arduino
+speed_tracker/build
+speed_tracker/devel
+speed_tracker/install
+speed_tracker/src/rosserial
+speed_tracker/Arduino/libraries/ros_lib
+
+
 rover/camera/data/*
 !rover/camera/data/.gitkeep
+
