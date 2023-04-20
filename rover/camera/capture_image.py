@@ -70,15 +70,20 @@ class MyListener(roypy.IDepthDataListener):
 
         depth = data[:, :, 2]
         gray = data[:, :, 4]
+        print(gray.shape)
+        max_val = np.max(gray)
+        min_val = np.min(gray)
+        print(f"Min {min_val} max {max_val}")
         confidence = data[:, :, 5]
 
         z_image = np.zeros(depth.shape, np.float32)
         gray_image = np.zeros(depth.shape, np.float32)
 
+
         # Pre-process Depth and Gray values
         mask = confidence > 0
         z_image[mask] = clamp_values(depth[mask], maximum_value=5)
-        gray_image[mask] = clamp_values(gray[mask], maximum_value=800)
+        gray_image[mask] = clamp_values(gray[mask], maximum_value=80)
 
         z_image8 = np.uint8(z_image)
         gray_image8 = np.uint8(gray_image)
@@ -151,7 +156,7 @@ def main():
     except SystemError:
         print("Using a live camera")
 
-    cam.setUseCase("MODE_5_35FPS_600")
+    cam.setUseCase("MODE_9_10FPS_1000")
     q = queue.Queue()
     l = MyListener(q)
     cam.registerDataListener(l)
