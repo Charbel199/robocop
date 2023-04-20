@@ -1,0 +1,9 @@
+# Goal
+float32 time_stop # the time that RoboCop should be stationary to consider the chase complete
+---
+# Result
+float32 time_chase # the time that the chase took to complete
+---
+# Feedback
+float32 distance
+float32 thetta
