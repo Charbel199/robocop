@@ -1,16 +1,18 @@
 version: '3.2'
 
 services:
-  pico_cam:
-    image: pico_cam:latest
-    build:
-      dockerfile: ./Dockerfile
+  ros_pico:
+    image: ros_pico:latest
+    build: ./Dockerfile
     volumes:
       - .:/home/rover
       - /tmp/.X11-unix/:/tmp/.X11-unix/
     environment:
       - DISPLAY
+    ports:
+      - 11311:11311
     restart: unless-stopped
     privileged: true
     stdin_open: true
     tty: true
+
