@@ -17,27 +17,26 @@ class Motor:
         MOTOR2_ENABLE_PIN = 20
 
 
-        # Pin Modes
-        GPIO.setup(MOTOR1_ENABLE_PIN, GPIO.OUT)
-        GPIO.setup(MOTOR2_ENABLE_PIN, GPIO.OUT)
-
-        GPIO.setup(MOTOR1_IN1_PIN, GPIO.OUT)
-        GPIO.setup(MOTOR1_IN2_PIN, GPIO.OUT)
-        GPIO.setup(MOTOR2_IN1_PIN, GPIO.OUT)
-        GPIO.setup(MOTOR2_IN2_PIN, GPIO.OUT)
-
-        # Initializing motors
-        self.motor1_pwm = GPIO.PWM(MOTOR1_ENABLE_PIN, 1000)
-        self.motor2_pwm = GPIO.PWM(MOTOR2_ENABLE_PIN, 1000)
-        self.motor1_pwm.start(0)
-        self.motor2_pwm.start(0)
-
+        # Setting Pin Modes and Initializing motors
         if motor==1:
+            GPIO.setup(MOTOR1_ENABLE_PIN, GPIO.OUT)
+            GPIO.setup(MOTOR1_IN1_PIN, GPIO.OUT)
+            GPIO.setup(MOTOR1_IN2_PIN, GPIO.OUT)
+
             self.motor_pin1 = MOTOR1_IN1_PIN
             self.motor_pin2 = MOTOR1_IN2_PIN
+            self.motor1_pwm = GPIO.PWM(MOTOR1_ENABLE_PIN, 1000)
+            self.motor1_pwm.start(0)
+
         elif motor==2:
+            GPIO.setup(MOTOR2_ENABLE_PIN, GPIO.OUT)
+            GPIO.setup(MOTOR2_IN1_PIN, GPIO.OUT)
+            GPIO.setup(MOTOR2_IN2_PIN, GPIO.OUT)
+
             self.motor_pin1 = MOTOR2_IN1_PIN
             self.motor_pin2 = MOTOR2_IN2_PIN
+            self.motor2_pwm = GPIO.PWM(MOTOR2_ENABLE_PIN, 1000)
+            self.motor2_pwm.start(0)
     
     def set_motor(self, direction, speed):
         if direction == "forward":

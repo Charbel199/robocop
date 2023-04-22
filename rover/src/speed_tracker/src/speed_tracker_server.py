@@ -7,13 +7,13 @@ import actionlib
 import math
 import os
 import sys
-
+import RPi.GPIO as GPIO
 
 from speed_tracker.msg import LaunchRoboCopAction, LaunchRoboCopResult, LaunchRoboCopFeedback
 
 from control.fuzzy import FuzzyRoverController
-#from robocop_motor import *
-#from encoder import *
+from control.robocop_motor import *
+from control.encoder import *
 
 class RoboCopServer:
   def __init__(self):
@@ -30,11 +30,11 @@ class RoboCopServer:
     self.fuzzy_rover_controller.create_control_system()
 
     # initialize 2 motors (1: left, 2: right)
-    # self.motor1 = Motor(1)
-    # self.motor2 = Motor(2)
+    self.motor1 = Motor(1)
+    self.motor2 = Motor(2)
 
     # initialize encoder for motor speeds
-    # self.encoder = Encoder()
+    self.encoder = Encoder()
 
     # fuzzy logic inputs
     self.distance = 1
@@ -59,14 +59,12 @@ class RoboCopServer:
 
       # Use fuzzy controller to actuate motors
       l_motor_value, r_motor_value = self.fuzzy_rover_controller.compute_output(self.distance, self.deviation, self.encoder.motor2_speed, self.encoder.motor1_speed)
-      # self.motor1.set_motor("forward", l_motor_value)
-      # self.motor2.set_motor("forward", r_motor_value)
+      self.motor1.set_motor("forward", l_motor_value)
+      self.motor2.set_motor("forward", r_motor_value)
 
       # return speed values as feedback
-      # speed1 = self.encoder.motor1_speed
-      # speed2 = self.encoder.motor2_speed
-      speed1 = math.random()
-      speed2 = math.random()
+      speed1 = self.encoder.motor1_speed
+      speed2 = self.encoder.motor2_speed
       speed_magnitude = math.sqrt(speed1**2 + speed2**2)
 
       if speed_magnitude<self.ZERO_THRESHOLD:
@@ -94,4 +92,6 @@ class RoboCopServer:
 if __name__ == '__main__':
   rospy.init_node('robo_cop_server')
   server = RoboCopServer()
+  print("Started RoboCop Action Server")
   rospy.spin()
+  GPIO.cleanup()
