@@ -12,8 +12,8 @@ class Motor:
         MOTOR1_IN1_PIN = 5
         MOTOR1_IN2_PIN = 6
         MOTOR1_ENABLE_PIN = 16
-        MOTOR2_IN1_PIN = 13
-        MOTOR2_IN2_PIN = 19
+        MOTOR2_IN1_PIN = 19
+        MOTOR2_IN2_PIN = 13
         MOTOR2_ENABLE_PIN = 20
 
 
@@ -25,8 +25,8 @@ class Motor:
 
             self.motor_pin1 = MOTOR1_IN1_PIN
             self.motor_pin2 = MOTOR1_IN2_PIN
-            self.motor1_pwm = GPIO.PWM(MOTOR1_ENABLE_PIN, 1000)
-            self.motor1_pwm.start(0)
+            self.motor_pwm = GPIO.PWM(MOTOR1_ENABLE_PIN, 1000)
+            self.motor_pwm.start(0)
 
         elif motor==2:
             GPIO.setup(MOTOR2_ENABLE_PIN, GPIO.OUT)
@@ -35,8 +35,8 @@ class Motor:
 
             self.motor_pin1 = MOTOR2_IN1_PIN
             self.motor_pin2 = MOTOR2_IN2_PIN
-            self.motor2_pwm = GPIO.PWM(MOTOR2_ENABLE_PIN, 1000)
-            self.motor2_pwm.start(0)
+            self.motor_pwm = GPIO.PWM(MOTOR2_ENABLE_PIN, 1000)
+            self.motor_pwm.start(0)
     
     def set_motor(self, direction, speed):
         if direction == "forward":
@@ -51,20 +51,20 @@ class Motor:
         else:
             GPIO.output(self.motor_pin1, GPIO.HIGH)
             GPIO.output(self.motor_pin2, GPIO.HIGH)
-        self.motor1_pwm.ChangeDutyCycle(speed)
+        self.motor_pwm.ChangeDutyCycle(speed)
 
 if __name__ == "__main__":
     motor1 = Motor(1)
     motor2 = Motor(2)
-    time.sleep(5)
+    time.sleep(2)
 
     motor1.set_motor("forward", 100) 
     motor2.set_motor("forward", 100) 
-    time.sleep(3)
+    time.sleep(2)
 
-    motor1.set_motor("reverse", 100) 
-    motor2.set_motor("reverse", 100) 
-    time.sleep(3)
+    motor1.set_motor("backward", 100) 
+    motor2.set_motor("backward", 100) 
+    time.sleep(2)
 
     motor1.set_motor("stop", 100) 
     motor2.set_motor("stop", 100) 

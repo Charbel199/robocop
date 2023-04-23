@@ -9,10 +9,12 @@ services:
       - /tmp/.X11-unix/:/tmp/.X11-unix/
     environment:
       - DISPLAY
-    ports:
-      - 11311:11311
+    network_mode: "host"
+#    ports:
+#      - 11311:11311
     restart: unless-stopped
     privileged: true
     stdin_open: true
     tty: true
+
 
