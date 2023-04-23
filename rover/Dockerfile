@@ -14,13 +14,12 @@ RUN apt-get install -y libqt5widgets5 python3-tk
 ENV QT_QPA_PLATFORM=xcb
 ENV PYTHONPATH=/home/rover
 
-RUN echo "export ROS_IP=$(hostname -I | awk '{print $1}')" >> ~/.bashrc
-RUN echo 'source /opt/ros/noetic/setup.bash' >> ~/.bashrc
-
+COPY . /home/rover
 WORKDIR /home/rover
 
-RUN catkin_make
+RUN /bin/bash -c '. /opt/ros/noetic/setup.bash; catkin_make'
 
-RUN echo 'source devel/setup.bash' >> ~/.bashrc
+RUN echo 'source /opt/ros/noetic/setup.bash' >> ~/.bashrc
+RUN echo 'source /home/rover/devel/setup.bash' >> ~/.bashrc
 
 CMD ["bash"]
