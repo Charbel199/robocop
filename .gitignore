@@ -186,6 +186,9 @@ rover/install
 rover/camera/data/*
 !rover/camera/data/.gitkeep
 
+# ROS
+rover/devel
+rover/build
 extra/SoundWireServe
 ml/yolov5/dataset/*
 !ml/yolov5/dataset/.gitkeep
