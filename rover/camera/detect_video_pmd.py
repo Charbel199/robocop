@@ -25,9 +25,8 @@ import time
 import numpy as np
 import cv2
 from camera.utils.dir_utils import get_next_number
-import detect_utils
 
-from model import get_model
+
 
 def clamp_values(values, maximum_value):
     """
@@ -62,8 +61,6 @@ class MyListener(roypy.IDepthDataListener):
         self.queue = q
         self.frame_count = 0  # to count total frames
         self.total_fps = 0  # to get the final frames per second
-        self.device = torch.device('cpu')
-        self.model = get_model(self.device)
     def onNewData(self, data):
         p = data.npoints()
         self.queue.put(p)
@@ -74,13 +71,12 @@ class MyListener(roypy.IDepthDataListener):
         """
         # mutex to lock out changes to the distortion while drawing
         self.lock.acquire()
-
+        # PROCESS ML
+        start_time = time.time()
         depth = data[:, :, 2]
         gray = data[:, :, 4]
-        print(gray.shape)
         max_val = np.max(gray)
         min_val = np.min(gray)
-        print(f"Min {min_val} max {max_val}")
         confidence = data[:, :, 5]
 
         z_image = np.zeros(depth.shape, np.float32)
@@ -101,14 +97,7 @@ class MyListener(roypy.IDepthDataListener):
             gray_image8 = cv2.undistort(gray_image8, self.cameraMatrix, self.distortionCoefficients)
 
 
-        # PROCESS ML
-        start_time = time.time()
 
-        with torch.no_grad():
-            # get predictions for the current frame
-            threshold = 0.2
-            boxes, classes, labels = detect_utils.predict(gray_image8, self.model, self.device, threshold)
-        image = detect_utils.draw_boxes(boxes, classes, labels, gray_image8)
 
         end_time = time.time()
         # get the fps
@@ -118,10 +107,10 @@ class MyListener(roypy.IDepthDataListener):
         # increment frame count
         self.frame_count += 1
         # write the FPS on the current frame
-        cv2.putText(image, f"{fps:.3f} FPS", (15, 30), cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (0, 255, 0), 2)
+        # cv2.putText(gray_image8, f"{fps:.3f} FPS", (15, 30), cv2.FONT_HERSHEY_SIMPLEX,
+        #             1, (0, 255, 0), 2)
         # convert from BGR to RGB color format
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.cvtColor(gray_image8, cv2.COLOR_BGR2RGB)
         cv2.imshow('image', image)
 
         self.lock.release()
