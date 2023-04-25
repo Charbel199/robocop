@@ -65,12 +65,13 @@ class RoboCopServer:
 
       # Use fuzzy controller to actuate motors
       l_motor_value, r_motor_value = self.fuzzy_rover_controller.compute_output(self.distance, self.deviation, self.encoder.motor2_speed, self.encoder.motor1_speed)
+      print(f"l_motor_value = {l_motor_value}, r_motor_value = {r_motor_value}")
+
       self.motor1.set_motor("forward", l_motor_value)
       self.motor2.set_motor("forward", r_motor_value)
 
       # return speed values as feedback
-      speed1 = self.encoder.motor1_speed
-      speed2 = self.encoder.motor2_speed
+      speed1, speed2 = self.encoder.getSpeeds()
       speed_magnitude = math.sqrt(speed1**2 + speed2**2)
 
       if speed_magnitude<self.ZERO_THRESHOLD:
@@ -83,8 +84,8 @@ class RoboCopServer:
       else:
         self.timer_stop = 0
 
-      self.feedback.distance = distance
-      self.feedback.deviation = deviation
+      self.feedback.distance = self.distance
+      self.feedback.deviation = self.deviation
       self.feedback.speed_left = speed1
       self.feedback.speed_right = speed2
 
