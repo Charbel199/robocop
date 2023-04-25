@@ -19,7 +19,7 @@ class FuzzyRoverController:
         # Define membership functions
         if auto_mf:
             self.distance.automf(3, names=['low', 'medium', 'high'])
-            self.deviation.automf(3, names=['poor', 'average', 'good'])
+            self.deviation.automf(5, names=['extreme left', 'left', 'center', 'right', 'extreme right'])
             self.r_speed.automf(4, names=['very slow', 'slow', 'average', 'fast'])
             self.l_speed.automf(4, names=['very slow', 'slow', 'average', 'fast'])
             self.r_motor.automf(3, names=['low', 'medium', 'high'])
@@ -55,17 +55,18 @@ class FuzzyRoverController:
 
     def define_rules(self):
         # Define fuzzy rules
-        self.rules.append(ctrl.Rule(self.distance['low'] & self.deviation['poor'] & self.r_speed['fast'], self.r_motor['low']))
-        self.rules.append(ctrl.Rule(self.distance['medium'] & self.deviation['average'] & self.r_speed['average'], self.r_motor['medium']))
-        self.rules.append(ctrl.Rule(self.distance['medium'] & self.deviation['good'] & self.r_speed['slow'], self.r_motor['high']))
-        self.rules.append(ctrl.Rule(self.distance['low'] & self.deviation['average'] & self.r_speed['very slow'], self.r_motor['low']))
-        self.rules.append(ctrl.Rule(self.distance['high'] & self.deviation['good'], self.r_motor['low']))
 
-        self.rules.append(ctrl.Rule(self.distance['low'] & self.deviation['average'] & self.l_speed['fast'], self.l_motor['low']))
-        self.rules.append(ctrl.Rule(self.distance['low'] & self.deviation['good'] & self.l_speed['average'], self.l_motor['medium']))
-        self.rules.append(ctrl.Rule(self.distance['high'] & self.deviation['good'] & self.l_speed['slow'], self.l_motor['high']))
-        self.rules.append(ctrl.Rule(self.distance['low'] & self.deviation['average'] & self.l_speed['very slow'], self.l_motor['low']))
-        self.rules.append(ctrl.Rule(self.distance['high'] & self.deviation['good'], self.l_motor['high']))
+        # Distance based rules
+        self.rules.append(ctrl.Rule(self.distance['low'], self.l_motor('low') &  self.r_motor['low'] ))
+        self.rules.append(ctrl.Rule(self.distance['medium'], self.l_motor('medium') &  self.r_motor['medium'] ))
+        self.rules.append(ctrl.Rule(self.distance['high'], self.l_motor('high') &  self.r_motor['high'] ))
+
+        # Deviation based rules
+        self.rules.append(ctrl.Rule(self.deviation['extreme left'], self.l_motor('low') &  self.r_motor['high'] ))
+        self.rules.append(ctrl.Rule(self.deviation['left'], self.l_motor('medium') &  self.r_motor['high'] ))
+        self.rules.append(ctrl.Rule(self.deviation['right'], self.l_motor('high') &  self.r_motor['medium'] ))
+        self.rules.append(ctrl.Rule(self.deviation['extreme right'], self.l_motor('high') &  self.r_motor['low'] ))
+
 
     def create_control_system(self):
         # Create control system
