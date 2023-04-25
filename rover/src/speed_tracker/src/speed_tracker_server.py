@@ -38,7 +38,7 @@ class RoboCopServer:
 
     # fuzzy logic inputs
     self.distance = 1
-    self.deviation = 2
+    self.deviation = 0
 
     self.timer_chase = 0
     self.timer_stop = 0

@@ -8,10 +8,10 @@ import skfuzzy.control as ctrl
 class FuzzyRoverController:
     def __init__(self, auto_mf=True):
         # Define input and output variables
-        self.distance = ctrl.Antecedent(np.arange(0, 11, 1), 'distance')
-        self.deviation = ctrl.Antecedent(np.arange(-5, 6, 1), 'deviation')
-        self.r_speed = ctrl.Antecedent(np.arange(0, 13, 1), 'r_speed')
-        self.l_speed = ctrl.Antecedent(np.arange(0, 13, 1), 'l_speed')
+        self.distance = ctrl.Antecedent(np.arange(0, 3, 0.01), 'distance')
+        self.deviation = ctrl.Antecedent(np.arange(-70, 70, 1), 'deviation')
+        self.r_speed = ctrl.Antecedent(np.arange(0, 13, 0.1), 'r_speed')
+        self.l_speed = ctrl.Antecedent(np.arange(0, 13, 0.1), 'l_speed')
 
         self.r_motor = ctrl.Consequent(np.arange(0, 101, 1), 'r_motor', defuzzify_method='centroid')
         self.l_motor = ctrl.Consequent(np.arange(0, 101, 1), 'l_motor', defuzzify_method='centroid')
@@ -49,7 +49,7 @@ class FuzzyRoverController:
 
             self.l_motor['low'] = fuzz.trimf(self.l_motor.universe, [0, 0, 50])
             self.l_motor['medium'] = fuzz.trimf(self.l_motor.universe, [0, 50, 100])
-            self.l_motor['high'] = fuzz.trimf(self.l_motor.universe, [50, 100, 100])
+            self.l_motor['high'] = fuzz.trimf(self.l_motor.universe, [50, 100, 100]) names=['low', 'medium', 'high'])
 
         self.rules = []
 
