@@ -35,6 +35,11 @@ class Encoder:
                 GPIO.add_event_detect(self.ENCODER1CHANNELA, GPIO.RISING, callback=self.callback, bouncetime=50)
                 GPIO.add_event_detect(self.ENCODER2CHANNELA, GPIO.RISING, callback=self.callback, bouncetime=50)
 
+        def getSpeeds(self):
+                temp1, temp2 = self.motor1_speed, self.motor2_speed
+                self.motor1_speed = 0
+                self.motor2_speed = 0
+                return temp1, temp2
 
         # Encoder callback function on RISING edge
         def callback(self, channel):
@@ -44,7 +49,6 @@ class Encoder:
                         encoder1countsPerSec = 1 / deltaTime
                         encoder1revsPerSec = encoder1countsPerSec / self.COUNTS_PER_REV
                         self.motor1_speed = encoder1revsPerSec * self.CM_PER_REV
-                        print("Motor 1 Speed: " + str(self.motor1_speed))
 
                 elif channel == self.ENCODER2CHANNELA and GPIO.input(self.ENCODER2CHANNELA) == GPIO.HIGH:
                         deltaTime = time.time() - self.ENCODER2_LAST_PULSE
@@ -52,4 +56,3 @@ class Encoder:
                         encoder2countsPerSec = 1 / deltaTime
                         encoder2revsPerSec = encoder2countsPerSec / self.COUNTS_PER_REV
                         self.motor2_speed = encoder2revsPerSec * self.CM_PER_REV
-                        print("Motor 2 Speed: " + str(self.motor2_speed))

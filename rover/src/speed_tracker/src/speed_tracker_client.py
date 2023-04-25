@@ -23,10 +23,10 @@ def check_speed(data):
     speed = data.data
     rospy.loginfo(speed)
     goal = LaunchRoboCopGoal()
-    goal.time_stop = 5.3
+    goal.time_stop = 5
     if(speed>THRESHOLD):
         client.send_goal(goal,feedback_cb=feedback_log)
-        client.wait_for_result(rospy.Duration.from_sec(5.0))
+        client.wait_for_result()
         time_chase = client.get_result()
         rospy.loginfo(f"Done heheheha: {time_chase}")
 
