@@ -37,8 +37,8 @@ class RoboCopServer:
     self.encoder = Encoder()
 
     # fuzzy logic inputs
-    self.distance = 1
-    self.deviation = 0
+    self.distance = 3
+    self.deviation = 60
 
     self.timer_chase = 0
     self.timer_stop = 0

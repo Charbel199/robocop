@@ -49,7 +49,7 @@ class FuzzyRoverController:
 
             self.l_motor['low'] = fuzz.trimf(self.l_motor.universe, [0, 0, 50])
             self.l_motor['medium'] = fuzz.trimf(self.l_motor.universe, [0, 50, 100])
-            self.l_motor['high'] = fuzz.trimf(self.l_motor.universe, [50, 100, 100]) names=['low', 'medium', 'high'])
+            self.l_motor['high'] = fuzz.trimf(self.l_motor.universe, [50, 100, 100])
 
         self.rules = []
 
@@ -59,11 +59,13 @@ class FuzzyRoverController:
         self.rules.append(ctrl.Rule(self.distance['medium'] & self.deviation['average'] & self.r_speed['average'], self.r_motor['medium']))
         self.rules.append(ctrl.Rule(self.distance['medium'] & self.deviation['good'] & self.r_speed['slow'], self.r_motor['high']))
         self.rules.append(ctrl.Rule(self.distance['low'] & self.deviation['average'] & self.r_speed['very slow'], self.r_motor['low']))
+        self.rules.append(ctrl.Rule(self.distance['high'] & self.deviation['good'], self.r_motor['low']))
 
         self.rules.append(ctrl.Rule(self.distance['low'] & self.deviation['average'] & self.l_speed['fast'], self.l_motor['low']))
         self.rules.append(ctrl.Rule(self.distance['low'] & self.deviation['good'] & self.l_speed['average'], self.l_motor['medium']))
         self.rules.append(ctrl.Rule(self.distance['high'] & self.deviation['good'] & self.l_speed['slow'], self.l_motor['high']))
         self.rules.append(ctrl.Rule(self.distance['low'] & self.deviation['average'] & self.l_speed['very slow'], self.l_motor['low']))
+        self.rules.append(ctrl.Rule(self.distance['high'] & self.deviation['good'], self.l_motor['high']))
 
     def create_control_system(self):
         # Create control system
