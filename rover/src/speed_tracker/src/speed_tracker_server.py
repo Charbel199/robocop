@@ -9,6 +9,7 @@ import os
 import sys
 import RPi.GPIO as GPIO
 
+from std_msgs.msg import Float32
 from speed_tracker.msg import LaunchRoboCopAction, LaunchRoboCopResult, LaunchRoboCopFeedback
 
 from control.fuzzy import FuzzyRoverController
@@ -37,14 +38,21 @@ class RoboCopServer:
     self.encoder = Encoder()
 
     # fuzzy logic inputs
-    self.distance = 3
-    self.deviation = 60
+    rospy.Subscriber("/robo_cop/distance", Float32, self.check_distance)
+    rospy.Subscriber("/robo_cop/deviation", Float32, self.check_deviation)
+    self.distance = 0
+    self.deviation = 0
 
     self.timer_chase = 0
     self.timer_stop = 0
     self.ZERO_THRESHOLD = 0.01
     self.server.start()
 
+  def check_distance(self, data):
+    self.distance = data.data
+  
+  def check_deviation(self, data):
+    self.deviation = data.data
 
 
   def execute(self, goal):
@@ -54,8 +62,6 @@ class RoboCopServer:
       self.timer_chase += 1/self.RATE
 
       ##TODO get distance and thetta ...
-      distance = self.distance
-      deviation = self.deviation
 
       # Use fuzzy controller to actuate motors
       l_motor_value, r_motor_value = self.fuzzy_rover_controller.compute_output(self.distance, self.deviation, self.encoder.motor2_speed, self.encoder.motor1_speed)
