@@ -177,6 +177,11 @@ speed_tracker/install
 speed_tracker/src/rosserial
 speed_tracker/Arduino/libraries/ros_lib
 
+# Catkin_ws
+rover/build
+rover/devel
+rover/install
+
 
 rover/camera/data/*
 !rover/camera/data/.gitkeep
