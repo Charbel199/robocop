@@ -181,3 +181,4 @@ speed_tracker/Arduino/libraries/ros_lib
 rover/camera/data/*
 !rover/camera/data/.gitkeep
 
+extra/SoundWireServe
