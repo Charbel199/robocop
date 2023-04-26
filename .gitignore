@@ -186,3 +186,13 @@ rover/install
 rover/camera/data/*
 !rover/camera/data/.gitkeep
 
+extra/SoundWireServe
+ml/yolov5/dataset/*
+!ml/yolov5/dataset/.gitkeep
+
+ml/yolov5/runs/*
+!ml/yolov5/runs/.gitkeep
+
+
+ml/yolov5/wandb/*
+!ml/yolov5/wandb/.gitkeep
