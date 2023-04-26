@@ -2,13 +2,10 @@ import cv2
 import torch
 import argparse
 import time
-from pathlib import Path
 from models.experimental import attempt_load
-from utils.general import check_img_size, check_requirements, check_imshow, colorstr, is_ascii, non_max_suppression, \
-    apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
+from utils.general import check_img_size, non_max_suppression, scale_coords
 from utils.plots import Annotator, colors
-from utils.torch_utils import select_device, load_classifier, time_sync
-import numpy as np
+from utils.torch_utils import select_device
 
 
 def load_model(weights_path,
@@ -27,8 +24,8 @@ def detect_objects(model,
                    draw_image,
                    augment=False,
                    visualize=False,
-                   conf_thres=0.25,
-                   iou_thres=0.45,
+                   conf_thresh=0.25,
+                   iou_thresh=0.45,
                    agnostic_nms=False,
                    classes=None,
                    max_det=1000,
@@ -41,9 +38,12 @@ def detect_objects(model,
     pred = model(img, augment=augment, visualize=visualize)[0]
     names = model.module.names if hasattr(model, 'module') else model.names  # get class names
     # NMS
-    pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
+    pred = non_max_suppression(pred, conf_thresh, iou_thresh, classes, agnostic_nms, max_det=max_det)
 
     annotator = Annotator(draw_image, line_width=line_thickness, pil=not ascii)
+
+    car_detections = []
+
     # Process predictions
     for i, det in enumerate(pred):  # detections per image
         if len(det):
@@ -53,16 +53,25 @@ def detect_objects(model,
             hide_conf = False
             # Write results
             for *xyxy, conf, cls in reversed(det):
+                p1, p2 = (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3]))
                 c = int(cls)  # integer class
-                label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
-                annotator.box_label(xyxy, label, color=colors(c, True))
+                label = None if hide_labels else (names[c] if hide_conf else f'{names[c]}')
+                conf_label = f'{conf:.2f}'
+                if 'Car' in label:
+                    car_detections.append({
+                        'p1': p1,
+                        'p2': p2,
+                        'label': label,
+                        'conf': conf_label
+                    })
+                annotator.box_label(xyxy, f"{label} {conf_label}", color=colors(c, True))
 
-    return annotator.result()
+    return annotator.result(), car_detections
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='runs/train/exp12/weights/best.pt', help='Initial weights path')
+    parser.add_argument('--weights', type=str, default='runs/train/exp15/weights/best.pt', help='Initial weights path')
     parser.add_argument('--device', type=str, default='cuda:0', help='Device')
     parser.add_argument('--half', type=bool, default=False, help='Half precision')
 
@@ -106,12 +115,13 @@ def main(opt):
             if len(img.shape) == 3:
                 img = img[None]  # expand for batch dim
 
-            img_view = detect_objects(model=model,
-                                      img=img,
-                                      augment=False,
-                                      visualize=False,
-                                      draw_image=original_image_copy)
+            img_view, car_detections = detect_objects(model=model,
+                                                      img=img,
+                                                      augment=False,
+                                                      visualize=False,
+                                                      draw_image=original_image_copy)
 
+            print(f"Car detections: {car_detections}")
             end_time = time.time()
             fps = 1 / (end_time - start_time)
             total_fps += fps
