@@ -9,15 +9,15 @@ import matplotlib.pyplot as plt
 
 class FuzzyRoverController:
     def __init__(self, auto_mf=True):
-        self.MFS = 10
+        self.MFS = 9
         # Define input and output variables
         self.distance = ctrl.Antecedent(np.arange(0, 3, 0.01), 'distance')
         self.deviation = ctrl.Antecedent(np.arange(-70, 70, 1), 'deviation')
         # self.r_speed = ctrl.Antecedent(np.arange(0, 13, 0.1), 'r_speed')
         # self.l_speed = ctrl.Antecedent(np.arange(0, 13, 0.1), 'l_speed')
 
-        self.r_motor = ctrl.Consequent(np.arange(0, 51, 1), 'r_motor', defuzzify_method='mom')
-        self.l_motor = ctrl.Consequent(np.arange(0, 51, 1), 'l_motor', defuzzify_method='mom')
+        self.r_motor = ctrl.Consequent(np.arange(0, 51, 1), 'r_motor', defuzzify_method='centroid')
+        self.l_motor = ctrl.Consequent(np.arange(0, 51, 1), 'l_motor', defuzzify_method='centroid')
         self.names = []
         # Define membership functions
         if auto_mf:
@@ -110,9 +110,23 @@ class FuzzyRoverController:
         # self.rules.append(ctrl.Rule(self.distance['high'], self.r_motor['10'] ))
 
         # Deviation based rules
-        for i in range(self.MFS):
-            self.rules.append(ctrl.Rule(self.deviation[str(i)], self.l_motor[str(min(i - 1 + int(self.MFS/2), self.MFS -1))]))
-            self.rules.append(ctrl.Rule(self.deviation[str(i)], self.r_motor[str(max(self.MFS - i - 1, int(self.MFS/2)))] ))
+        for i in range(self.MFS): 
+            dev_l_motor = str(min(i  + int(self.MFS/2), self.MFS - 1))
+            dev_r_motor = str(min(self.MFS - i - 1 + int(self.MFS/2), self.MFS - 1))
+            print(f"For deviation MF {i}:")
+            print(self.l_motor[dev_l_motor])
+            print(self.r_motor[dev_r_motor])
+            # 0 -> 4 8
+            # 1 -> 5 8
+            # 2 -> 6 8
+            # 3 -> 7 8
+            # 4 -> 8 8
+            # 5 -> 8 7
+            # 6 -> 8 6
+            # 7 -> 8 5
+            # 8 -> 8 4
+            self.rules.append(ctrl.Rule(self.deviation[str(i)], self.l_motor[dev_l_motor]))
+            self.rules.append(ctrl.Rule(self.deviation[str(i)], self.r_motor[dev_r_motor] ))
 
 
         # self.rules.append(ctrl.Rule(self.deviation['extreme left'], self.l_motor['5']  ))
@@ -164,6 +178,6 @@ if __name__ == "__main__":
     fu.define_rules()
     fu.create_control_system()
 
-    for i in range(0,3000,10):
-        l_motor_value, r_motor_value = fu.compute_output(i/1000, 0, 11, 11, sugeno=False)
-        print(f"for distance {i/1000}: l_motor_value = {l_motor_value}, r_motor_value = {r_motor_value}")
+    for i in range(-70,71):
+        l_motor_value, r_motor_value = fu.compute_output(0.5, i, 11, 11, sugeno=False)
+        print(f"for deviation {i}: l_motor_value = {l_motor_value}, r_motor_value = {r_motor_value}")
