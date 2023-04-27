@@ -56,15 +56,15 @@ class Motor:
 if __name__ == "__main__":
     motor1 = Motor(1)
     motor2 = Motor(2)
-    time.sleep(2)
+    time.sleep(1)
 
-    motor1.set_motor("forward", 100) 
-    motor2.set_motor("forward", 100) 
-    time.sleep(2)
+    motor1.set_motor("forward", 51) 
+    motor2.set_motor("forward", 51) 
+    time.sleep(10)
 
-    motor1.set_motor("backward", 100) 
-    motor2.set_motor("backward", 100) 
-    time.sleep(2)
+    # motor1.set_motor("backward", 100) 
+    # motor2.set_motor("backward", 100) 
+    # time.sleep(2)
 
     motor1.set_motor("stop", 100) 
     motor2.set_motor("stop", 100) 
