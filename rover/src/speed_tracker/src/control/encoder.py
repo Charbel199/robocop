@@ -32,8 +32,8 @@ class Encoder:
                 # GPIO.setup(self.ENCODER2CHANNELB, GPIO.IN)
                 
                 # GPIO interrupts to read encoder RISING edges
-                GPIO.add_event_detect(self.ENCODER1CHANNELA, GPIO.RISING, callback=self.callback, bouncetime=50)
-                GPIO.add_event_detect(self.ENCODER2CHANNELA, GPIO.RISING, callback=self.callback, bouncetime=50)
+                GPIO.add_event_detect(self.ENCODER1CHANNELA, GPIO.RISING, callback=self.callback)
+                GPIO.add_event_detect(self.ENCODER2CHANNELA, GPIO.RISING, callback=self.callback)
 
         def getSpeeds(self):
                 temp1, temp2 = self.motor1_speed, self.motor2_speed
