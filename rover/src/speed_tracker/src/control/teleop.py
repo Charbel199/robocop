@@ -47,21 +47,21 @@ if __name__ == '__main__':
         r = rospy.Rate(10)
         while not rospy.is_shutdown():
             if up_pressed and right_pressed:
-                direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 50, 30
+                direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 25, 10
             elif up_pressed and left_pressed:
-                direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 30, 50
+                direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 10, 25
             elif down_pressed and right_pressed:
-                direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 50, 30
+                direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 25, 10
             elif down_pressed and left_pressed:
-                direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 30, 50
+                direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 10, 25
             elif up_pressed:
-                direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 50, 50
+                direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 25, 25
             elif down_pressed:
-                direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 50, 50
+                direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 25, 25
             elif right_pressed:
-                direction_right, direction_left, speed_left, speed_right = 'backward', 'forward', 50, 50
+                direction_right, direction_left, speed_left, speed_right = 'backward', 'forward', 25, 25
             elif left_pressed:
-                direction_right, direction_left, speed_left, speed_right = 'forward', 'backward', 50, 50
+                direction_right, direction_left, speed_left, speed_right = 'forward', 'backward', 25, 25
             else:
                 direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 0, 0
             r.sleep()

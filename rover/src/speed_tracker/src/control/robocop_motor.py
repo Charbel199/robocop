@@ -7,10 +7,10 @@ import rospy
 from speed_tracker.msg import teleop
 
 class Motor:
-    def __init__(self, motor, teleop=False):
+    def __init__(self, motor, isTeleop=False):
         GPIO.setmode(GPIO.BCM)
         self.motor = motor
-        if teleop:
+        if isTeleop:
             rospy.Subscriber("/robocop_teleop", teleop, self.cb)
 
         # Motors' GPIO Pins
