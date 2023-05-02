@@ -9,7 +9,7 @@ import os
 import sys
 import RPi.GPIO as GPIO
 
-from std_msgs.msg import Float32
+from speed_tracker.msg import fuzzy_inputs
 from speed_tracker.msg import LaunchRoboCopAction, LaunchRoboCopResult, LaunchRoboCopFeedback
 
 from control.fuzzy import FuzzyRoverController
@@ -38,8 +38,8 @@ class RoboCopServer:
     self.encoder = Encoder()
 
     # fuzzy logic inputs
-    rospy.Subscriber("/robo_cop/distance", Float32, self.check_distance)
-    rospy.Subscriber("/robo_cop/deviation", Float32, self.check_deviation)
+    rospy.Subscriber("/robo_cop/fuzzy_inputs", fuzzy_inputs, self.check_inputs)
+
     self.distance = 0
     self.deviation = 0
 
@@ -48,12 +48,9 @@ class RoboCopServer:
     self.ZERO_THRESHOLD = 0.01
     self.server.start()
 
-  def check_distance(self, data):
-    self.distance = data.data
-  
-  def check_deviation(self, data):
-    self.deviation = data.data
-
+  def check_inputs(self, data):
+    self.distance = data.distance
+    self.deviation = data.deviation
 
   def execute(self, goal):
     rospy.loginfo(f"Goal time is: {goal.time_stop}")

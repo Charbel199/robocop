@@ -2,11 +2,16 @@
 
 import RPi.GPIO as GPIO
 import time
+import rospy
 
+from speed_tracker.msg import teleop
 
 class Motor:
-    def __init__(self, motor):
+    def __init__(self, motor, is_teleop=False):
         GPIO.setmode(GPIO.BCM)
+        self.motor = motor
+        if is_teleop:
+            rospy.Subscriber("/robocop_teleop", teleop, self.cb)
 
         # Motors' GPIO Pins
         MOTOR1_IN1_PIN = 5
@@ -38,6 +43,12 @@ class Motor:
             self.motor_pwm = GPIO.PWM(MOTOR2_ENABLE_PIN, 1000)
             self.motor_pwm.start(0)
     
+    def cb(self, data):
+        if self.motor == 1:
+            self.set_motor(data.direction_left, data.speed_left)
+        else:
+            self.set_motor(data.direction_right, data.speed_right)
+
     def set_motor(self, direction, speed):
         if direction == "forward":
             GPIO.output(self.motor_pin1, GPIO.HIGH)
@@ -54,18 +65,8 @@ class Motor:
         self.motor_pwm.ChangeDutyCycle(speed)
 
 if __name__ == "__main__":
-    motor1 = Motor(1)
-    motor2 = Motor(2)
-    time.sleep(1)
-
-    motor1.set_motor("forward", 51) 
-    motor2.set_motor("forward", 51) 
-    time.sleep(10)
-
-    # motor1.set_motor("backward", 100) 
-    # motor2.set_motor("backward", 100) 
-    # time.sleep(2)
-
-    motor1.set_motor("stop", 100) 
-    motor2.set_motor("stop", 100) 
+    rospy.init_node("robocop_motors")
+    motor1 = Motor(1, True)
+    motor2 = Motor(2, True)
+    rospy.spin()
     GPIO.cleanup()
