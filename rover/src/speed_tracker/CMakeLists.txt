@@ -26,7 +26,7 @@ catkin_python_setup()
 
 find_package(catkin REQUIRED genmsg actionlib_msgs)
 add_action_files(DIRECTORY action FILES LaunchRoboCop.action)
-add_message_files(FILES teleop.msg)
+add_message_files(FILES teleop_robocop.msg fuzzy_inputs.msg)
 generate_messages(DEPENDENCIES actionlib_msgs)
 
 ################################################
