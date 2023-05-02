@@ -1,7 +1,9 @@
 import requests
 import os
-
-voice_id = 'jezrhkF9hm5kXYpbND6B'
+from pydub import AudioSegment
+from pydub.playback import play
+import io
+voice_id = 'HdHijm07A1ZXRVGHVvjs'
 url = f'https://api.elevenlabs.io/v1/text-to-speech/{voice_id}'
 api_key = os.getenv('API_KEY', default=None)
 
@@ -25,6 +27,11 @@ def tts(text, stability=0.3, similarity_boost=1, output_path='./temp.mp3'):
     # Make the HTTP request
     response = requests.post(url, headers=headers, json=payload)
 
+    audio = AudioSegment.from_file(io.BytesIO(response.content), format='mp3')
+
+    # Play the audio file
+    play(audio)
+
     # Check the response status code
     if response.status_code == 200:
         # Do something with the response content, e.g. write it to a file
@@ -33,3 +40,8 @@ def tts(text, stability=0.3, similarity_boost=1, output_path='./temp.mp3'):
     else:
         # Handle the error
         print(f'Request failed with status code {response.status_code}: {response.text}')
+
+if __name__ == "__main__":
+    tts(f"ATTENTION!!! Georges Daou \n\n this is the POLICE!!!. PULL OVER NOW OR WE WILL USE NECESSARY FORCE TO STOP YOUR VEHICLE !!!!! RATATATATATATA",
+        similarity_boost=1,
+        stability=0.6)
