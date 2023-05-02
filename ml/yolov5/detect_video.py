@@ -57,7 +57,7 @@ def detect_objects(model,
                 c = int(cls)  # integer class
                 label = None if hide_labels else (names[c] if hide_conf else f'{names[c]}')
                 conf_label = f'{conf:.2f}'
-                if 'Car' in label:
+                if 'rover' in label:
                     car_detections.append({
                         'p1': p1,
                         'p2': p2,
@@ -100,6 +100,7 @@ def main(opt):
     # read until end of video
     while (cap.isOpened()):
         ret, img = cap.read()
+        img =  cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
         # img = cv2.imread('test_images/imtest1.jpeg')
         # img = cv2.resize(img, (448,672))
         original_image_copy = img.copy()
