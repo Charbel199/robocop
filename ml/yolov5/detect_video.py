@@ -10,6 +10,7 @@ from utils.plots import Annotator, colors
 from utils.torch_utils import select_device
 from std_msgs.msg import Float64MultiArray
 
+
 def load_model(weights_path,
                device,
                half=False):
@@ -86,7 +87,6 @@ class Yolov5Publisher:
         self.publisher = rospy.Publisher('/robo_cop/yolov5/bounding_box', Float64MultiArray, queue_size=10)
 
 
-
 def main(opt):
     yolov5_publisher = Yolov5Publisher().publisher
 
@@ -110,7 +110,7 @@ def main(opt):
     # read until end of video
     while (cap.isOpened()):
         ret, img = cap.read()
-        img =  cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
         # img = cv2.imread('test_images/imtest1.jpeg')
         # img = cv2.resize(img, (448,672))
         original_image_copy = img.copy()
@@ -131,9 +131,11 @@ def main(opt):
                                                       augment=False,
                                                       visualize=False,
                                                       draw_image=original_image_copy)
-            if len(car_detections)>0:
+            if len(car_detections) > 0:
                 highest_car_confidence = max(car_detections, key=lambda x: x['conf'])
-                yolov5_publisher.publish([highest_car_confidence['p1'],highest_car_confidence['p2']])
+                yolov5_publisher.publish([highest_car_confidence['p1'], highest_car_confidence['p2']])
+            else:
+                yolov5_publisher.publish([])
             print(f"Car detections: {car_detections}")
             end_time = time.time()
             fps = 1 / (end_time - start_time)
