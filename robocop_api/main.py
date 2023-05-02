@@ -3,6 +3,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from api.controllers import health_controller
+from api.controllers import tts_controller
 import uvicorn
 
 
@@ -27,7 +28,11 @@ def create_app() -> FastAPI:
         prefix="/health",
         tags=["Health"]
     )
-
+    app.include_router(
+        tts_controller.router,
+        prefix="/tts",
+        tags=["TTS"]
+    )
     @app.exception_handler(ApplicationError)
     async def api_exception_handler(request: Request, exception: ApplicationError):
         return JSONResponse(status_code=exception.status_code, content={"message": exception.message})
