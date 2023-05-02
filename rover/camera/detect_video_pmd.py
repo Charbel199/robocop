@@ -151,12 +151,6 @@ class MyListener(roypy.IDepthDataListener):
             print(f"Distance is {distance} deviation is {deviation}")
             self.publisher.publish([distance, deviation])
 
-        # print(f"DISTANCE IS {np.max(sub_image)}")
-        print(f"MAX BIN IS {max_bin}")
-
-        # TODO: Chaneg [1,1] with the actual distance and deviation
-        self.publisher.publish([1, 1])
-
         end_time = time.time()
         # get the fps
         fps = 1 / (end_time - start_time)
@@ -168,8 +162,8 @@ class MyListener(roypy.IDepthDataListener):
         # cv2.putText(gray_image8, f"{fps:.3f} FPS", (15, 30), cv2.FONT_HERSHEY_SIMPLEX,
         #             1, (0, 255, 0), 2)
         # convert from BGR to RGB color format
-        image = cv2.cvtColor(gray_image8, cv2.COLOR_BGR2RGB)
-        cv2.imshow('image', image)
+        # image = cv2.cvtColor(gray_image8, cv2.COLOR_BGR2RGB)
+        # cv2.imshow('image', image)
 
         self.lock.release()
         self.done = True
