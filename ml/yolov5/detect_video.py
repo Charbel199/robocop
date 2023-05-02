@@ -1,4 +1,6 @@
+#! /usr/bin/env python
 import cv2
+import rospy
 import torch
 import argparse
 import time
@@ -6,7 +8,7 @@ from models.experimental import attempt_load
 from utils.general import check_img_size, non_max_suppression, scale_coords
 from utils.plots import Annotator, colors
 from utils.torch_utils import select_device
-
+from std_msgs.msg import Float64MultiArray
 
 def load_model(weights_path,
                device,
@@ -71,7 +73,7 @@ def detect_objects(model,
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='runs/train/exp15/weights/best.pt', help='Initial weights path')
+    parser.add_argument('--weights', type=str, default='runs/train/exp16/weights/best.pt', help='Initial weights path')
     parser.add_argument('--device', type=str, default='cuda:0', help='Device')
     parser.add_argument('--half', type=bool, default=False, help='Half precision')
 
@@ -79,7 +81,15 @@ def parse_args():
     return opt
 
 
+class Yolov5Publisher:
+    def __init__(self):
+        self.publisher = rospy.Publisher('/robo_cop/yolov5/bounding_box', Float64MultiArray, queue_size=10)
+
+
+
 def main(opt):
+    yolov5_publisher = Yolov5Publisher().publisher
+
     # define the computation device
     device = opt.device
     device = select_device(device)
@@ -121,7 +131,9 @@ def main(opt):
                                                       augment=False,
                                                       visualize=False,
                                                       draw_image=original_image_copy)
-
+            if len(car_detections)>0:
+                highest_car_confidence = max(car_detections, key=lambda x: x['conf'])
+                yolov5_publisher.publish([highest_car_confidence['p1'],highest_car_confidence['p2']])
             print(f"Car detections: {car_detections}")
             end_time = time.time()
             fps = 1 / (end_time - start_time)
@@ -147,4 +159,5 @@ def main(opt):
 
 if __name__ == "__main__":
     opt = parse_args()
+    rospy.init_node('yolov5')
     main(opt)
