@@ -71,20 +71,20 @@ class RoboCopServer:
       speed1, speed2 = self.encoder.getSpeeds()
       speed_magnitude = math.sqrt(speed1**2 + speed2**2)
 
-      if speed_magnitude<self.ZERO_THRESHOLD:
-        self.timer_stop += 1/self.RATE
-        if self.timer_stop >= goal.time_stop:
-          result = LaunchRoboCopResult()
-          result.time_chase = self.timer_chase
-          self.server.set_succeeded(result)
-          break
-      else:
-        self.timer_stop = 0
+      # if speed_magnitude<self.ZERO_THRESHOLD:
+      #   self.timer_stop += 1/self.RATE
+      #   if self.timer_stop >= goal.time_stop:
+      #     result = LaunchRoboCopResult()
+      #     result.time_chase = self.timer_chase
+      #     self.server.set_succeeded(result)
+      #     break
+      # else:
+      #   self.timer_stop = 0
 
       self.feedback.distance = self.distance
       self.feedback.deviation = self.deviation
-      self.feedback.speed_left = speed1
-      self.feedback.speed_right = speed2
+      self.feedback.speed_left = l_motor_value
+      self.feedback.speed_right = r_motor_value
 
       self.server.publish_feedback(self.feedback)
 

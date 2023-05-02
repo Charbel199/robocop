@@ -5,7 +5,7 @@ import rospy
 
 from speed_tracker.msg import teleop_robocop, fuzzy_inputs
 
-is_robocop = False
+is_robocop = True
 
 up_pressed = False
 down_pressed = False
@@ -54,21 +54,21 @@ if __name__ == '__main__':
         while not rospy.is_shutdown():
             if is_robocop:
                 if up_pressed and right_pressed:
-                    direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 25, 10
+                    direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 40, 20
                 elif up_pressed and left_pressed:
-                    direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 10, 25
+                    direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 20, 40
                 elif down_pressed and right_pressed:
-                    direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 25, 10
+                    direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 40, 20
                 elif down_pressed and left_pressed:
-                    direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 10, 25
+                    direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 20, 40
                 elif up_pressed:
-                    direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 25, 25
+                    direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 40, 40
                 elif down_pressed:
-                    direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 25, 25
+                    direction_right, direction_left, speed_left, speed_right = 'backward', 'backward', 40, 40
                 elif right_pressed:
-                    direction_right, direction_left, speed_left, speed_right = 'backward', 'forward', 25, 25
+                    direction_right, direction_left, speed_left, speed_right = 'backward', 'forward', 40, 40
                 elif left_pressed:
-                    direction_right, direction_left, speed_left, speed_right = 'forward', 'backward', 25, 25
+                    direction_right, direction_left, speed_left, speed_right = 'forward', 'backward', 40, 40
                 else:
                     direction_right, direction_left, speed_left, speed_right = 'forward', 'forward', 0, 0
                 r.sleep()

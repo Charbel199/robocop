@@ -56,3 +56,7 @@ class Encoder:
                         encoder2countsPerSec = 1 / deltaTime
                         encoder2revsPerSec = encoder2countsPerSec / self.COUNTS_PER_REV
                         self.motor2_speed = encoder2revsPerSec * self.CM_PER_REV
+if __name__ == '__main__':
+        encoder = Encoder()
+        while True:
+                print(encoder.getSpeeds())

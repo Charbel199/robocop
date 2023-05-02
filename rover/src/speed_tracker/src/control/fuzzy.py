@@ -11,18 +11,18 @@ class FuzzyRoverController:
     def __init__(self, auto_mf=True):
         self.MFS = 7
         self.FAM = [
-            [1, 2, 3, 5, 5, 5, 5],
+            [1, 2, 3, 4, 5, 5, 5],
             [1, 3, 4, 5, 5, 5, 5],
-            [1, 4, 4, 5, 5, 5, 5],
-            [2, 4, 5, 7, 7, 7, 7],
-            [7, 5, 5, 7, 7, 7, 7],
-            [7, 6, 5, 7, 7, 7, 7],
+            [1, 3, 4, 5, 5, 5, 5],
+            [2, 3, 4, 5, 6, 7, 7],
+            [7, 4, 5, 6, 7, 7, 7],
+            [7, 5, 6, 7, 7, 7, 7],
             [7, 7, 7, 7, 7, 7, 7]
         ]
 
         # Define input and output variables
-        self.distance = ctrl.Antecedent(np.arange(0, 3, 0.01), 'distance')
-        self.deviation = ctrl.Antecedent(np.arange(-50, 51, 1), 'deviation')
+        self.distance = ctrl.Antecedent(np.arange(0, 2, 0.01), 'distance')
+        self.deviation = ctrl.Antecedent(np.arange(-20, 21, 1), 'deviation')
         # self.r_speed = ctrl.Antecedent(np.arange(0, 13, 0.1), 'r_speed')
         # self.l_speed = ctrl.Antecedent(np.arange(0, 13, 0.1), 'l_speed')
 
@@ -143,7 +143,7 @@ class FuzzyRoverController:
                 z.append((w[0] * z1 + w[1] * z2 + w[2] * z3) / (w[0] + w[1] + w[2]))
             return z
 
-        print(f"Using Mamdani Inference System")
+        # print(f"Using Mamdani Inference System")
         return self.motors.output['l_motor'], self.motors.output['r_motor']
 
 
