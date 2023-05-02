@@ -74,7 +74,7 @@ def detect_objects(model,
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='runs/train/exp16/weights/best.pt', help='Initial weights path')
+    parser.add_argument('--weights', type=str, default='runs/train/exp17/weights/best.pt', help='Initial weights path')
     parser.add_argument('--device', type=str, default='cuda:0', help='Device')
     parser.add_argument('--half', type=bool, default=False, help='Half precision')
 
@@ -133,9 +133,13 @@ def main(opt):
                                                       draw_image=original_image_copy)
             if len(car_detections) > 0:
                 highest_car_confidence = max(car_detections, key=lambda x: x['conf'])
-                yolov5_publisher.publish([highest_car_confidence['p1'], highest_car_confidence['p2']])
+                bbox_data = Float64MultiArray()
+                bbox_data.data = [highest_car_confidence['p1'][0],highest_car_confidence['p1'][1], highest_car_confidence['p2'][0], highest_car_confidence['p2'][1]]
+                yolov5_publisher.publish(bbox_data)
             else:
-                yolov5_publisher.publish([])
+                bbox_data = Float64MultiArray()
+                bbox_data.data = []
+                yolov5_publisher.publish(bbox_data)
             print(f"Car detections: {car_detections}")
             end_time = time.time()
             fps = 1 / (end_time - start_time)

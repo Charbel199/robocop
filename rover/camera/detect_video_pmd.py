@@ -113,10 +113,11 @@ class MyListener(roypy.IDepthDataListener):
 
         # USE BBOX
         if len(self.bbox_pts) > 0:
-            pt1 = self.bbox_pts[0]
-            pt2 = self.bbox_pts[1]
-            x1, y1 = pt1
-            x2, y2 = pt2
+
+            x1, y1 = self.bbox_pts[0],self.bbox_pts[1]
+            x2, y2 = self.bbox_pts[2],self.bbox_pts[3]
+            pt1 = (x1,y1)
+            pt2 = (x2,y2)
             depth_bbox = depth[y1:y2, x1:x2]
             x_bbox = x[y1:y2, x1:x2]
 
