@@ -31,7 +31,7 @@ cv2.setMouseCallback("Camera Feed", capture_image)
 while True:
     # Capture frame-by-frame
     ret, frame = cap.read()
-
+    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
     # Check if frame is available
     if not ret:
         print("Unable to capture frame")
