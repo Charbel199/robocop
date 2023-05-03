@@ -12,7 +12,8 @@ contains utilities which are useful to multiple samples, and could be used as sn
 applications"""
 
 import argparse
-import roypy
+import camera.pmd_camera_utils_pi.roypy as roypy
+
 
 from tkinter import *  
 

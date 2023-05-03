@@ -32,7 +32,6 @@ else:
     from camera.pmd_camera_utils_pi.roypy_sample_utils import CameraOpener, add_camera_opener_options
     from camera.pmd_camera_utils_pi.roypy_platform_utils import PlatformHelper
 
-import torch
 import time
 import numpy as np
 import cv2
@@ -118,7 +117,7 @@ class MyListener(roypy.IDepthDataListener):
             gray_image8 = cv2.undistort(gray_image8, self.cameraMatrix, self.distortionCoefficients)
         z_image8 = cv2.resize(z_image8, (640, 480), interpolation=cv2.INTER_LINEAR)
         z_image8 = cv2.rotate(z_image8, cv2.ROTATE_90_COUNTERCLOCKWISE)
-
+        print(z_image8.shape)
         # USE BBOX
         if len(self.bbox_pts) > 0:
 
@@ -207,6 +206,7 @@ class MyListener(roypy.IDepthDataListener):
 
 
 def main():
+    rospy.init_node("pmd_camera")
     # Set the available arguments
     platformhelper = PlatformHelper()
     parser = argparse.ArgumentParser(usage=__doc__)
@@ -246,7 +246,7 @@ def main():
 
 
 def process_event_queue(q, painter):
-    while True:
+    while not rospy.is_shutdown():
         try:
             # try to retrieve an item from the queue.
             # this will block until an item can be retrieved

@@ -10,8 +10,8 @@
 """This sample opens a camera and displays information about the connected camera."""
 
 import argparse
-import roypy
-from roypy_platform_utils import PlatformHelper
+import camera.pmd_camera_utils_pi.roypy as roypy
+from camera.pmd_camera_utils_pi.roypy_platform_utils import PlatformHelper
 
 def main ():
     platformhelper = PlatformHelper()
