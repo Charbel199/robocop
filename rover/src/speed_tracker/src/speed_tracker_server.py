@@ -9,7 +9,7 @@ import os
 import sys
 import RPi.GPIO as GPIO
 
-from speed_tracker.msg import fuzzy_inputs
+from std_msgs.msg import Float64MultiArray
 from speed_tracker.msg import LaunchRoboCopAction, LaunchRoboCopResult, LaunchRoboCopFeedback
 
 from control.fuzzy import FuzzyRoverController
@@ -38,7 +38,7 @@ class RoboCopServer:
     self.encoder = Encoder()
 
     # fuzzy logic inputs
-    rospy.Subscriber("/robo_cop/fuzzy_inputs", fuzzy_inputs, self.check_inputs)
+    rospy.Subscriber("/robo_cop/pmd/distance_deviation", Float64MultiArray, self.check_inputs)
 
     self.distance = 0
     self.deviation = 0
@@ -49,8 +49,9 @@ class RoboCopServer:
     self.server.start()
 
   def check_inputs(self, data):
-    self.distance = data.distance
-    self.deviation = data.deviation
+    if data.data[0] != -1:
+      self.distance = data.data[0]
+      self.deviation = data.data[1]
 
   def execute(self, goal):
     rospy.loginfo(f"Goal time is: {goal.time_stop}")
@@ -62,10 +63,14 @@ class RoboCopServer:
 
       # Use fuzzy controller to actuate motors
       l_motor_value, r_motor_value = self.fuzzy_rover_controller.compute_output(self.distance, self.deviation, self.encoder.motor2_speed, self.encoder.motor1_speed)
-      print(f"l_motor_value = {l_motor_value}, r_motor_value = {r_motor_value}")
+      # print(f"l_motor_value = {l_motor_value}, r_motor_value = {r_motor_value}")
 
-      self.motor1.set_motor("forward", l_motor_value)
-      self.motor2.set_motor("forward", r_motor_value)
+      if rospy.get_param("/robo_cop/override", 0) == 1:
+        self.motor1.set_motor("forward", l_motor_value)
+        self.motor2.set_motor("forward", r_motor_value)
+      else:
+        self.motor1.set_motor("stop", 0)
+        self.motor2.set_motor("stop", 0)
 
       # return speed values as feedback
       speed1, speed2 = self.encoder.getSpeeds()

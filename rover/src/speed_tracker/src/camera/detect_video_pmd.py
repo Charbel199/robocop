@@ -238,8 +238,10 @@ class MyListener(roypy.IDepthDataListener):
                 deviation = math.degrees(math.atan2(x_mean, distance))
             # print(f"We got the deviation {deviation} from the count {x_count}")
             if distance is not None and deviation is not None:
-                print(f"Distance is {distance} deviation is {deviation}")
-                self.publisher.publish([distance, deviation])
+                # print(f"Distance is {distance} deviation is {deviation}")
+                distance_dev_arr = Float64MultiArray()
+                distance_dev_arr.data = [distance, deviation]
+                self.publisher.publish(distance_dev_arr)
 
 
 

@@ -1,5 +1,5 @@
 <launch>
         <node name="speed_tracker_client" pkg="speed_tracker" type="speed_tracker_client.py" output="screen"/>
         <node name="speed_tracker_server" pkg="speed_tracker" type="speed_tracker_server.py" output="screen"/>
-        <node name="detect_video_pmd" pkg="speed_tracker" type="detect_video_pmd.py" output="screen"/>
+        <!-- <node name="detect_video_pmd" pkg="speed_tracker" type="detect_video_pmd.py" output="screen"/> -->
 </launch>

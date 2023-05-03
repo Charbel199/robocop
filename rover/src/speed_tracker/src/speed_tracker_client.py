@@ -12,11 +12,10 @@ THRESHOLD = 3
 
 
 def feedback_log(feedback):
-    # rospy.loginfo(f"Distance: {feedback.distance}")
-    # rospy.loginfo(f"Deviation: {feedback.deviation}")
+    rospy.loginfo(f"Distance: {feedback.distance}")
+    rospy.loginfo(f"Deviation: {feedback.deviation}")
     rospy.loginfo(f"Speed left: {feedback.speed_left}")
     rospy.loginfo(f"Speed right: {feedback.speed_right}")
-
 
     
 def check_speed(data):

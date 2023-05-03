@@ -11,13 +11,13 @@ class FuzzyRoverController:
     def __init__(self, auto_mf=True):
         self.MFS = 7
         self.FAM = [
-            [1, 2, 3, 4, 5, 5, 5],
+            [1, 3, 3, 4, 4, 4, 4],
             [1, 3, 4, 5, 5, 5, 5],
             [1, 3, 4, 5, 5, 5, 5],
-            [2, 3, 4, 5, 6, 7, 7],
-            [7, 4, 5, 6, 7, 7, 7],
-            [7, 5, 6, 7, 7, 7, 7],
-            [7, 7, 7, 7, 7, 7, 7]
+            [2, 3, 4, 5, 7, 7, 7],
+            [3, 4, 5, 6, 7, 7, 7],
+            [3, 4, 5, 6, 7, 7, 7],
+            [3, 4, 6, 7, 7, 7, 7]
         ]
 
         # Define input and output variables
@@ -119,7 +119,7 @@ class FuzzyRoverController:
         self.motors = ctrl.ControlSystemSimulation(self.motors_ctrl)
 
     def compute_output(self, distance, deviation, r_speed, l_speed, sugeno=False):
-        if distance < 0.2:
+        if distance < 0.3:
             return 0, 0
         self.motors.input['distance'] = distance
         self.motors.input['deviation'] = deviation
