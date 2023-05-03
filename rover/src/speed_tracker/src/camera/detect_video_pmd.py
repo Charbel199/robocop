@@ -93,7 +93,7 @@ class MyListener(roypy.IDepthDataListener):
         start_time = time.time()
 
         # Get PMD Values
-        x = data[:, :, 0]
+        x = data[:, :, 1]
         depth = data[:, :, 2]
         gray = data[:, :, 4]
         max_val = np.max(gray)
@@ -115,28 +115,110 @@ class MyListener(roypy.IDepthDataListener):
         if self.undistort_image:
             z_image8 = cv2.undistort(z_image8, self.cameraMatrix, self.distortionCoefficients)
             gray_image8 = cv2.undistort(gray_image8, self.cameraMatrix, self.distortionCoefficients)
+        mask = confidence < self.CONFIDENCE_THRESHOLD
+        depth[mask] = None
+        x[mask] = None
+        mask = depth == 0
+        depth[mask] = None
+        mask = x == 0
+        x[mask] = None
+
+
+        depth = cv2.resize(depth, (640, 480), interpolation=cv2.INTER_LINEAR)
+        depth = cv2.rotate(depth, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        x = cv2.resize(x, (640, 480), interpolation=cv2.INTER_LINEAR)
+        x = cv2.rotate(x, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+
         z_image8 = cv2.resize(z_image8, (640, 480), interpolation=cv2.INTER_LINEAR)
         z_image8 = cv2.rotate(z_image8, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        print(z_image8.shape)
-        # USE BBOX
-        if len(self.bbox_pts) > 0:
+        z_image8 = cv2.cvtColor(z_image8, cv2.COLOR_GRAY2BGR)
 
+
+        if len(self.bbox_pts) > 0:
+            distance = -1
+            deviation = -1
+            # Point from YOLO
             x1, y1 = self.bbox_pts[0],self.bbox_pts[1]
             x2, y2 = self.bbox_pts[2],self.bbox_pts[3]
             pt1 = (x1,y1)
             pt2 = (x2,y2)
-            depth_bbox = depth[y1:y2, x1:x2]
-            x_bbox = x[y1:y2, x1:x2]
 
             diff = abs(pt1[0] - pt2[0])
-            middle = (int((pt1[0] + pt2[0]) / 2), int(pt1[1] + diff * 0.1))
+            middle_yolo = (int((pt1[0] + pt2[0]) / 2), int(pt1[1] + diff * 0.1))
+
+            # Point to use
+            x1_pico = x1
+            y1_pico = y1
+            x2_pico = x2
+            y2_pico = y2
+
+            w = 480
+            # Calculate the percentage of how far the point is from the left edge
+            distance_from_left = middle_yolo[0]
+            percentage_from_left = distance_from_left / w * 100
+            max_diff_x = 491 - 398
+            max_diff_y = 294 - 273
+            # print(f"Old x1 x2 {x1_pico} {x2_pico}")
+
+            y_diff = max_diff_y
+            y1_pico -= y_diff
+            if y1_pico < 0:
+                y1_pico = 0
+            y2_pico -= y_diff
+            if y2_pico < 0:
+                y2_pico = 0
+            if percentage_from_left > 35:
+                # Define the new range
+                new_min = 0
+                new_max = max_diff_x
+
+                # Map the original values to the new range
+                x_diff = np.interp(percentage_from_left, (35, 100), (new_min, new_max))
+
+                # print(f"percentage_from_left {percentage_from_left} x diff {x_diff}")
+                x1_pico += x_diff
+                if x1_pico > w:
+                    x1_pico = w
+                x2_pico += x_diff
+                if x2_pico > w:
+                    x2_pico = w
+
+                # print(f"New x1 x2 {x1_pico} {x2_pico}")
+
+            # print(f"Percentage from left {percentage_from_left}")
+
+            x1_pico = int(x1_pico)
+            y1_pico = int(y1_pico)
+            x2_pico = int(x2_pico)
+            y2_pico = int(y2_pico)
+            pt1_pico = (int(x1_pico), int(y1_pico))
+            pt2_pico = (int(x2_pico), int(y2_pico))
+
+            depth_bbox = depth[y1_pico:y2_pico, x1_pico:x2_pico]
+
+            center = ((pt1_pico[0] + pt2_pico[0]) / 2, (pt1_pico[1] + pt2_pico[1]) / 2)
+            width = pt2_pico[0] - pt1_pico[0]
+            height = pt2_pico[1] - pt1_pico[1]
+            new_width = int(width * 0.6)
+            new_pt1_pico = (int(center[0] - new_width / 2), pt1_pico[1])
+            new_pt2_pico = (int(center[0] + new_width / 2), pt2_pico[1])
+            x_bbox = x[new_pt1_pico[1]:new_pt2_pico[1], new_pt1_pico[0]:new_pt2_pico[0]]
+            color = (125, 125, 0)
+            cv2.rectangle(z_image8, new_pt1_pico, new_pt2_pico, color, 2)
+
+            # print(f"Max depth {np.max(depth_bbox)} {np.min(depth_bbox)}")
+            diff = abs(pt1_pico[0] - pt2_pico[0])
+            middle = (int((pt1_pico[0] + pt2_pico[0]) / 2), int(pt1_pico[1] + diff * 0.1))
             color = (255, 255, 0)
 
             cv2.circle(z_image8, (int(middle[0]), int(middle[1])), 5, color, -1)
 
             # full_0_count = np.count_nonzero(z_image8_bbox == 0)
             hist, bins = np.histogram(depth_bbox, bins=np.linspace(0, 5, 15))
-            hist[0] = 0
+            # print(f"HIST ARE {hist}")
+            # print(hist)
             # Find bin with most pixels
             max_bin = np.argmax(hist)
             min_value_pixel = bins[max_bin]
@@ -144,9 +226,8 @@ class MyListener(roypy.IDepthDataListener):
             distance_count = depth_bbox[(depth_bbox >= min_value_pixel) & (depth_bbox <= max_value_pixel)]
             if len(distance_count) > 0:
                 distance = np.mean(distance_count)
-
-            hist, bins = np.histogram(x_bbox, bins=np.linspace(0, 5, 15))
-            hist[0] = 0
+            # print(f"We got the distance {distance} from the count {distance_count}")
+            hist, bins = np.histogram(x_bbox, bins=np.linspace(-1, 1, 15))
             # Find bin with most pixels
             max_bin = np.argmax(hist)
             min_value_pixel = bins[max_bin]
@@ -155,9 +236,12 @@ class MyListener(roypy.IDepthDataListener):
             if len(x_count) > 0:
                 x_mean = np.mean(x_count)
                 deviation = math.degrees(math.atan2(x_mean, distance))
+            # print(f"We got the deviation {deviation} from the count {x_count}")
+            if distance is not None and deviation is not None:
+                print(f"Distance is {distance} deviation is {deviation}")
+                self.publisher.publish([distance, deviation])
 
-            print(f"Distance is {distance} deviation is {deviation}")
-            self.publisher.publish([distance, deviation])
+
 
         end_time = time.time()
         # get the fps

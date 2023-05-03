@@ -11,7 +11,7 @@
 The Camera's lens parameters are optionally used to remove the lens distortion and then the image is displayed using openCV windows.
 Press 'd' on the keyboard to toggle the distortion while a window is selected. Press esc to exit.
 """
-
+import math
 import argparse
 import camera.pmd_camera_utils.roypy as roypy
 import queue
@@ -114,7 +114,7 @@ half &= device.type != 'cpu'
 # Load model
 # weights='yolov5m.pt'
 
-weights = '/home/charbel199/projs/robocop/ml/yolov5/runs/train/exp15/weights/best.pt'
+weights = '/home/charbel199/projs/robocop/ml/yolov5/runs/train/exp17/weights/best.pt'
 model, stride, names = load_model(weights_path=weights,
                                   device=device,
                                   half=False)
@@ -154,7 +154,7 @@ class MyListener(roypy.IDepthDataListener):
         self.queue = q
         self.frame_count = 0  # to count total frames
         self.total_fps = 0  # to get the final frames per second
-
+        self.CONFIDENCE_THRESHOLD = 50
     def onNewData(self, data):
         p = data.npoints()
         self.queue.put(p)
@@ -166,9 +166,12 @@ class MyListener(roypy.IDepthDataListener):
         # mutex to lock out changes to the distortion while drawing
         self.lock.acquire()
 
+        # Get PMD Values
+        x = data[:, :, 1]
         depth = data[:, :, 2]
-        # print(f"Depth min and max {np.min(depth)}  - {np.max(depth)}")
         gray = data[:, :, 4]
+        max_val = np.max(gray)
+        min_val = np.min(gray)
         confidence = data[:, :, 5]
 
 
@@ -184,39 +187,42 @@ class MyListener(roypy.IDepthDataListener):
             img = img[None]  # expand for batch dim
 
 
-
-        # UNDISTORT FRAME
-        # mtx2=np.load('mtx2.npy')
-        # dist2=np.load('dist2.npy')
-        # undist_frame = cv2.undistort(frame, mtx2, dist2)
-        # frame =undist_frame
-
-
-
-
-
+        # JUST FOR DRAWING
+        # Pre-process Depth and Gray values
+        x_image = np.zeros(x.shape, np.float32)
         z_image = np.zeros(depth.shape, np.float32)
         gray_image = np.zeros(depth.shape, np.float32)
-
-        # Pre-process Depth and Gray values
-        mask = confidence > 100
-        min_val = np.min(gray)
-        max_val = np.max(gray)
-        z_image[mask] = clamp_values(depth[mask], maximum_value=3)
-        gray_image[mask] = clamp_values(gray[mask], maximum_value=70)
+        mask = confidence > self.CONFIDENCE_THRESHOLD
+        x_image[mask] = clamp_values(x_image[mask], maximum_value=5)
+        z_image[mask] = clamp_values(depth[mask], maximum_value=5)
+        gray_image[mask] = clamp_values(gray[mask], maximum_value=180)
+        x_image8 = np.uint8(x_image)
         z_image8 = np.uint8(z_image)
         gray_image8 = np.uint8(gray_image)
-        # print(f"zimage8 min and max {np.min(z_image8)}  - {np.max(z_image8)}")
-        # APPLY UNDISTORT
+        # Apply undistortion
         if self.undistort_image:
-            z_image8_undist = cv2.undistort(z_image8, self.cameraMatrix, self.distortionCoefficients)
-            gray_image8_undist = cv2.undistort(gray_image8, self.cameraMatrix, self.distortionCoefficients)
-        # print(f"z_image8_undist min and max {np.min(z_image8_undist)}  - {np.max(z_image8_undist)}")
-        # depth = cv2.rotate(depth,cv2.ROTATE_90_COUNTERCLOCKWISE)
-        # confidence = cv2.rotate(confidence,cv2.ROTATE_90_COUNTERCLOCKWISE)
-        z_image8 = cv2.resize(z_image8, (640, 480), interpolation=cv2.INTER_LINEAR)
-        z_image8 = cv2.rotate(z_image8,cv2.ROTATE_90_COUNTERCLOCKWISE)
+            z_image8 = cv2.undistort(z_image8, self.cameraMatrix, self.distortionCoefficients)
+            gray_image8 = cv2.undistort(gray_image8, self.cameraMatrix, self.distortionCoefficients)
 
+        mask = confidence < self.CONFIDENCE_THRESHOLD
+        depth[mask] = None
+        x[mask] = None
+        mask = depth == 0
+        depth[mask] = None
+        mask = x == 0
+        x[mask] = None
+
+
+        depth = cv2.resize(depth, (640, 480), interpolation=cv2.INTER_LINEAR)
+        depth = cv2.rotate(depth, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        x = cv2.resize(x, (640, 480), interpolation=cv2.INTER_LINEAR)
+        x = cv2.rotate(x, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+
+        z_image8 = cv2.resize(z_image8, (640, 480), interpolation=cv2.INTER_LINEAR)
+        z_image8 = cv2.rotate(z_image8, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        z_image8 = cv2.cvtColor(z_image8, cv2.COLOR_GRAY2BGR)
         # z_image8_undist = cv2.resize(z_image8, (640, 480), interpolation=cv2.INTER_LINEAR)
         # z_image8_undist = cv2.rotate(z_image8_undist,cv2.ROTATE_90_COUNTERCLOCKWISE)
 
@@ -236,32 +242,133 @@ class MyListener(roypy.IDepthDataListener):
         #                                           img=img,
         #                                           augment=False,
         #                                           visualize=False,
-        #                                           draw_image=z_image8)
+        #                                         draw_image=z_image8)
         # print(f"Car detection {car_detections}")
-        if len(car_detections)>0:
+
+        if len(car_detections) > 0:
+            distance = -1
+            deviation = -1
+            # Point from YOLO
             detect = car_detections[0]
             pt1 = detect['p1']
             pt2 = detect['p2']
             x1,y1 = pt1
             x2,y2 = pt2
-            sub_image= z_image8[y1:y2, x1:x2]
+            diff = abs(pt1[0] - pt2[0])
+            middle_yolo = (int((pt1[0] + pt2[0]) / 2), int(pt1[1] + diff * 0.1))
+            color = (255, 255, 0)
+            cv2.circle(img_view, (int(middle_yolo[0]), int(middle_yolo[1])), 5, color, -1)
 
-            diff = abs(pt1[0]-pt2[0])
-            middle = (int((pt1[0]+pt2[0])/2),int(pt1[1]+diff*0.1))
-            color = (255,255,0)
-            cv2.circle(img_view, (int(middle[0]), int(middle[1])), 5, color, -1)
+
+            # Point to use
+            x1_pico = x1
+            y1_pico = y1
+            x2_pico = x2
+            y2_pico = y2
+
+
+
+            _, w, _ = img_view.shape
+            # Calculate the percentage of how far the point is from the left edge
+            distance_from_left = middle_yolo[0]
+            percentage_from_left = distance_from_left / w * 100
+            max_diff_x = 491-398
+            max_diff_y = 294-273
+            # print(f"Old x1 x2 {x1_pico} {x2_pico}")
+
+
+            y_diff = max_diff_y
+            y1_pico -= y_diff
+            if y1_pico < 0:
+                y1_pico = 0
+            y2_pico -= y_diff
+            if y2_pico < 0:
+                y2_pico = 0
+            if percentage_from_left > 35:
+                # Define the new range
+                new_min = 0
+                new_max = max_diff_x
+
+                # Map the original values to the new range
+                x_diff = np.interp(percentage_from_left, (35, 100), (new_min, new_max))
+
+                # print(f"percentage_from_left {percentage_from_left} x diff {x_diff}")
+                x1_pico+=x_diff
+                if x1_pico > w:
+                    x1_pico = w
+                x2_pico += x_diff
+                if x2_pico > w:
+                    x2_pico = w
+
+
+
+
+                # print(f"New x1 x2 {x1_pico} {x2_pico}")
+
+            # print(f"Percentage from left {percentage_from_left}")
+
+
+            x1_pico = int(x1_pico)
+            y1_pico = int(y1_pico)
+            x2_pico = int(x2_pico)
+            y2_pico = int(y2_pico)
+            pt1_pico = (int(x1_pico), int(y1_pico))
+            pt2_pico = (int(x2_pico), int(y2_pico))
+            color = (0,255,125)
+            color2 = (0,0,255)
+
+            cv2.rectangle(z_image8, pt1_pico, pt2_pico,color, 2)
+            cv2.rectangle(z_image8, pt1, pt2,color2, 2)
+
+
+            depth_bbox = depth[y1_pico:y2_pico, x1_pico:x2_pico]
+
+            center = ((pt1_pico[0] + pt2_pico[0]) / 2, (pt1_pico[1] + pt2_pico[1]) / 2)
+            width = pt2_pico[0] - pt1_pico[0]
+            height = pt2_pico[1] - pt1_pico[1]
+            new_width = int(width * 0.6)
+            new_pt1_pico = (int(center[0] - new_width / 2), pt1_pico[1])
+            new_pt2_pico = (int(center[0] + new_width / 2), pt2_pico[1])
+            x_bbox = x[new_pt1_pico[1]:new_pt2_pico[1], new_pt1_pico[0]:new_pt2_pico[0]]
+            color = (125,125,0)
+            cv2.rectangle(z_image8, new_pt1_pico, new_pt2_pico, color, 2)
+
+
+
+            # print(f"Max depth {np.max(depth_bbox)} {np.min(depth_bbox)}")
+            diff = abs(pt1_pico[0] - pt2_pico[0])
+            middle = (int((pt1_pico[0] + pt2_pico[0]) / 2), int(pt1_pico[1] + diff * 0.1))
+            color = (255, 255, 0)
+
             cv2.circle(z_image8, (int(middle[0]), int(middle[1])), 5, color, -1)
-            full_0_count = np.count_nonzero(sub_image == 0)
-            hist, bins = np.histogram(sub_image, bins=range(0, 257, 10))
-            print(f"FULL 0 {full_0_count}")
-            print(hist)
-            hist[0] = 0
+
+
+            # full_0_count = np.count_nonzero(z_image8_bbox == 0)
+            hist, bins = np.histogram(depth_bbox, bins=np.linspace(0, 5, 15))
+            # print(f"HIST ARE {hist}")
+            # print(hist)
             # Find bin with most pixels
             max_bin = np.argmax(hist)
-
-            # print(f"DISTANCE IS {np.max(sub_image)}")
-            print(f"MAX BIN IS {max_bin}")
-
+            min_value_pixel = bins[max_bin]
+            max_value_pixel = bins[max_bin + 1]
+            distance_count = depth_bbox[(depth_bbox >= min_value_pixel) & (depth_bbox <= max_value_pixel)]
+            if len(distance_count) > 0:
+                distance = np.mean(distance_count)
+            # print(f"We got the distance {distance} from the count {distance_count}")
+            hist, bins = np.histogram(x_bbox, bins=np.linspace(-1, 1, 15))
+            # Find bin with most pixels
+            max_bin = np.argmax(hist)
+            min_value_pixel = bins[max_bin]
+            max_value_pixel = bins[max_bin + 1]
+            x_count = x_bbox[(x_bbox >= min_value_pixel) & (x_bbox <= max_value_pixel)]
+            print(f"X HIST {hist}")
+            if len(x_count) > 0:
+                x_mean = np.mean(x_count)
+                print(f"X DISTANCE IS {x_mean}")
+                deviation = math.degrees(math.atan2(x_mean, distance))
+            # print(f"We got the deviation {deviation} from the count {x_count}")
+            if distance is not None and deviation is not None:
+                print(f"Distance is {distance} deviation is {deviation}")
 
 
         cv2.imshow('GrayUndist', z_image8)
