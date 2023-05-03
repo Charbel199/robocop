@@ -3,6 +3,7 @@ version: '3.2'
 services:
   robocop:
     image: robocop:latest
+    container_name: robocop
     build: ./Dockerfile
     volumes:
       - .:/home/rover

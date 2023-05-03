@@ -17,8 +17,8 @@ class Motor:
         MOTOR1_IN1_PIN = 5
         MOTOR1_IN2_PIN = 6
         MOTOR1_ENABLE_PIN = 12
-        MOTOR2_IN1_PIN = 19
-        MOTOR2_IN2_PIN = 26
+        MOTOR2_IN1_PIN = 4
+        MOTOR2_IN2_PIN = 17
         MOTOR2_ENABLE_PIN = 21
 
 
