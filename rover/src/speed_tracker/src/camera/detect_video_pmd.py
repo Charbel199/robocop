@@ -11,19 +11,27 @@
 The Camera's lens parameters are optionally used to remove the lens distortion and then the image is displayed using openCV windows.
 Press 'd' on the keyboard to toggle the distortion while a window is selected. Press esc to exit.
 """
+ARM = True
 
 import argparse
 import math
 
-import camera.pmd_camera_utils.roypy as roypy
 import queue
 import sys
 import threading
-
 import rospy
-from camera.pmd_camera_utils.sample_camera_info import print_camera_info
-from camera.pmd_camera_utils.roypy_sample_utils import CameraOpener, add_camera_opener_options
-from camera.pmd_camera_utils.roypy_platform_utils import PlatformHelper
+
+if not ARM:
+    import camera.pmd_camera_utils.roypy as roypy
+    from camera.pmd_camera_utils.sample_camera_info import print_camera_info
+    from camera.pmd_camera_utils.roypy_sample_utils import CameraOpener, add_camera_opener_options
+    from camera.pmd_camera_utils.roypy_platform_utils import PlatformHelper
+else:
+    import camera.pmd_camera_utils_pi.roypy as roypy
+    from camera.pmd_camera_utils_pi.sample_camera_info import print_camera_info
+    from camera.pmd_camera_utils_pi.roypy_sample_utils import CameraOpener, add_camera_opener_options
+    from camera.pmd_camera_utils_pi.roypy_platform_utils import PlatformHelper
+
 import torch
 import time
 import numpy as np
