@@ -1,0 +1,4 @@
+string direction_right
+string direction_left
+int8 speed_left
+int8 speed_right

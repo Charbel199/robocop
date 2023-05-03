@@ -1,0 +1,22 @@
+version: '3.2'
+
+services:
+  robocop:
+    image: robocop:latest
+    container_name: robocop
+    build: ./Dockerfile
+    volumes:
+      - .:/home/rover
+      - /tmp/.X11-unix/:/tmp/.X11-unix/
+    environment:
+      - DISPLAY
+      - ROS_IP
+    network_mode: "host"
+#    ports:
+#      - 11311:11311
+    restart: unless-stopped
+    privileged: true
+    stdin_open: true
+    tty: true
+
+

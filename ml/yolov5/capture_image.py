@@ -4,7 +4,7 @@ from utils.dir_utils import get_next_number
 # Define the function to capture the image when mouse is clicked
 def capture_image(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
-        dataset_path = './dataset/dataset_rover/images'
+        dataset_path = './dataset/dataset_rover2/images'
         next_number = get_next_number(dataset_path)
         cv2.imwrite(os.path.join(dataset_path,f'{next_number}.png'), frame)
         print(f"Data saved #{next_number}")
@@ -31,7 +31,7 @@ cv2.setMouseCallback("Camera Feed", capture_image)
 while True:
     # Capture frame-by-frame
     ret, frame = cap.read()
-
+    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
     # Check if frame is available
     if not ret:
         print("Unable to capture frame")
