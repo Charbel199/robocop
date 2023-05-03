@@ -23,7 +23,7 @@ from pmd_camera_utils.roypy_platform_utils import PlatformHelper
 
 import numpy as np
 import cv2
-from utils.dir_utils import get_next_number
+from helpers.dir_utils import get_next_number
 
 def clamp_values(values, maximum_value):
     """
@@ -83,7 +83,7 @@ class MyListener(roypy.IDepthDataListener):
         # Pre-process Depth and Gray values
         mask = confidence > 0
         z_image[mask] = clamp_values(depth[mask], maximum_value=5)
-        gray_image[mask] = clamp_values(gray[mask], maximum_value=80)
+        gray_image[mask] = clamp_values(gray[mask], maximum_value=180)
 
         z_image8 = np.uint8(z_image)
         gray_image8 = np.uint8(gray_image)

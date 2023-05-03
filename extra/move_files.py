@@ -6,8 +6,8 @@ import shutil
 
 def move_txt(s):
 
-    src_path =f'/home/charbel199/projs/robocop/ml/yolov5/dataset/annotated_rover/images/{s}'
-    trg_path =f'/home/charbel199/projs/robocop/ml/yolov5/dataset/annotated_rover/labels/{s}'
+    src_path =f'/home/charbel199/projs/robocop/ml/yolov5/dataset/annotated_rover2/images/{s}'
+    trg_path =f'/home/charbel199/projs/robocop/ml/yolov5/dataset/annotated_rover2/labels/{s}'
 
 
     for src_file in Path(src_path).glob('*.txt'):
@@ -19,4 +19,4 @@ def move_txt(s):
 
 move_txt('train')
 move_txt('test')
-move_txt('valid')
+move_txt('val')

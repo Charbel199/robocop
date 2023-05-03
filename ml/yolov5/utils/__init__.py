@@ -12,5 +12,5 @@ try:
     ImageFont.truetype(font)
 except Exception as e:  # download if missing
     url = "https://ultralytics.com/assets/" + font
-    print(f'Downloading {url} to {ROOT / font}...')
-    torch.hub.download_url_to_file(url, str(ROOT / font))
+    # print(f'Downloading {url} to {ROOT / font}...')
+    # torch.hub.download_url_to_file(url, str(ROOT / font))

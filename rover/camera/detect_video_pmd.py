@@ -13,10 +13,14 @@ Press 'd' on the keyboard to toggle the distortion while a window is selected. P
 """
 
 import argparse
+import math
+
 import camera.pmd_camera_utils.roypy as roypy
 import queue
 import sys
 import threading
+
+import rospy
 from camera.pmd_camera_utils.sample_camera_info import print_camera_info
 from camera.pmd_camera_utils.roypy_sample_utils import CameraOpener, add_camera_opener_options
 from camera.pmd_camera_utils.roypy_platform_utils import PlatformHelper
@@ -25,7 +29,7 @@ import time
 import numpy as np
 import cv2
 from camera.utils.dir_utils import get_next_number
-
+from std_msgs.msg import Float64MultiArray
 
 
 def clamp_values(values, maximum_value):
@@ -53,14 +57,22 @@ def key_listener(event, x, y, flags, param):
 class MyListener(roypy.IDepthDataListener):
     def __init__(self, q):
         super(MyListener, self).__init__()
+        self.subscriber = rospy.Subscriber('/robo_cop/yolov5/bounding_box', Float64MultiArray, self.callback)
+        self.publisher = rospy.Publisher('/robo_cop/pmd/distance_deviation', Float64MultiArray)
         self.frame = 0
         self.done = False
         self.undistort_image = False
         self.lock = threading.Lock()
         self.once = False
         self.queue = q
+        self.bbox_pts = []
         self.frame_count = 0  # to count total frames
         self.total_fps = 0  # to get the final frames per second
+        self.CONFIDENCE_THRESHOLD = 50
+
+    def callback(self, data: Float64MultiArray):
+        self.bbox_pts = data.data
+
     def onNewData(self, data):
         p = data.npoints()
         self.queue.put(p)
@@ -71,33 +83,74 @@ class MyListener(roypy.IDepthDataListener):
         """
         # mutex to lock out changes to the distortion while drawing
         self.lock.acquire()
-        # PROCESS ML
         start_time = time.time()
+
+        # Get PMD Values
+        x = data[:, :, 0]
         depth = data[:, :, 2]
         gray = data[:, :, 4]
         max_val = np.max(gray)
         min_val = np.min(gray)
         confidence = data[:, :, 5]
 
+        # Pre-process Depth and Gray values
+        x_image = np.zeros(x.shape, np.float32)
         z_image = np.zeros(depth.shape, np.float32)
         gray_image = np.zeros(depth.shape, np.float32)
-
-
-        # Pre-process Depth and Gray values
-        mask = confidence > 0
+        mask = confidence > self.CONFIDENCE_THRESHOLD
+        x_image[mask] = clamp_values(x_image[mask], maximum_value=5)
         z_image[mask] = clamp_values(depth[mask], maximum_value=5)
         gray_image[mask] = clamp_values(gray[mask], maximum_value=180)
-
+        x_image8 = np.uint8(x_image)
         z_image8 = np.uint8(z_image)
         gray_image8 = np.uint8(gray_image)
-
-        # apply undistortion
+        # Apply undistortion
         if self.undistort_image:
             z_image8 = cv2.undistort(z_image8, self.cameraMatrix, self.distortionCoefficients)
             gray_image8 = cv2.undistort(gray_image8, self.cameraMatrix, self.distortionCoefficients)
+        z_image8 = cv2.resize(z_image8, (640, 480), interpolation=cv2.INTER_LINEAR)
+        z_image8 = cv2.rotate(z_image8, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
+        # USE BBOX
+        if len(self.bbox_pts) > 0:
 
+            x1, y1 = self.bbox_pts[0],self.bbox_pts[1]
+            x2, y2 = self.bbox_pts[2],self.bbox_pts[3]
+            pt1 = (x1,y1)
+            pt2 = (x2,y2)
+            depth_bbox = depth[y1:y2, x1:x2]
+            x_bbox = x[y1:y2, x1:x2]
 
+            diff = abs(pt1[0] - pt2[0])
+            middle = (int((pt1[0] + pt2[0]) / 2), int(pt1[1] + diff * 0.1))
+            color = (255, 255, 0)
+
+            cv2.circle(z_image8, (int(middle[0]), int(middle[1])), 5, color, -1)
+
+            # full_0_count = np.count_nonzero(z_image8_bbox == 0)
+            hist, bins = np.histogram(depth_bbox, bins=np.linspace(0, 5, 15))
+            hist[0] = 0
+            # Find bin with most pixels
+            max_bin = np.argmax(hist)
+            min_value_pixel = bins[max_bin]
+            max_value_pixel = bins[max_bin + 1]
+            distance_count = depth_bbox[(depth_bbox >= min_value_pixel) & (depth_bbox <= max_value_pixel)]
+            if len(distance_count) > 0:
+                distance = np.mean(distance_count)
+
+            hist, bins = np.histogram(x_bbox, bins=np.linspace(0, 5, 15))
+            hist[0] = 0
+            # Find bin with most pixels
+            max_bin = np.argmax(hist)
+            min_value_pixel = bins[max_bin]
+            max_value_pixel = bins[max_bin + 1]
+            x_count = x_bbox[(x_bbox >= min_value_pixel) & (x_bbox <= max_value_pixel)]
+            if len(x_count) > 0:
+                x_mean = np.mean(x_count)
+                deviation = math.degrees(math.atan2(x_mean, distance))
+
+            print(f"Distance is {distance} deviation is {deviation}")
+            self.publisher.publish([distance, deviation])
 
         end_time = time.time()
         # get the fps
@@ -110,8 +163,8 @@ class MyListener(roypy.IDepthDataListener):
         # cv2.putText(gray_image8, f"{fps:.3f} FPS", (15, 30), cv2.FONT_HERSHEY_SIMPLEX,
         #             1, (0, 255, 0), 2)
         # convert from BGR to RGB color format
-        image = cv2.cvtColor(gray_image8, cv2.COLOR_BGR2RGB)
-        cv2.imshow('image', image)
+        # image = cv2.cvtColor(gray_image8, cv2.COLOR_BGR2RGB)
+        # cv2.imshow('image', image)
 
         self.lock.release()
         self.done = True

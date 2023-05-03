@@ -1,4 +1,6 @@
+#! /usr/bin/env python
 import cv2
+import rospy
 import torch
 import argparse
 import time
@@ -6,6 +8,7 @@ from models.experimental import attempt_load
 from utils.general import check_img_size, non_max_suppression, scale_coords
 from utils.plots import Annotator, colors
 from utils.torch_utils import select_device
+from std_msgs.msg import Float64MultiArray
 
 
 def load_model(weights_path,
@@ -57,7 +60,7 @@ def detect_objects(model,
                 c = int(cls)  # integer class
                 label = None if hide_labels else (names[c] if hide_conf else f'{names[c]}')
                 conf_label = f'{conf:.2f}'
-                if 'Car' in label:
+                if 'rover' in label:
                     car_detections.append({
                         'p1': p1,
                         'p2': p2,
@@ -71,7 +74,7 @@ def detect_objects(model,
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='runs/train/exp15/weights/best.pt', help='Initial weights path')
+    parser.add_argument('--weights', type=str, default='runs/train/exp17/weights/best.pt', help='Initial weights path')
     parser.add_argument('--device', type=str, default='cuda:0', help='Device')
     parser.add_argument('--half', type=bool, default=False, help='Half precision')
 
@@ -79,7 +82,14 @@ def parse_args():
     return opt
 
 
+class Yolov5Publisher:
+    def __init__(self):
+        self.publisher = rospy.Publisher('/robo_cop/yolov5/bounding_box', Float64MultiArray, queue_size=10)
+
+
 def main(opt):
+    yolov5_publisher = Yolov5Publisher().publisher
+
     # define the computation device
     device = opt.device
     device = select_device(device)
@@ -100,6 +110,7 @@ def main(opt):
     # read until end of video
     while (cap.isOpened()):
         ret, img = cap.read()
+        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
         # img = cv2.imread('test_images/imtest1.jpeg')
         # img = cv2.resize(img, (448,672))
         original_image_copy = img.copy()
@@ -120,7 +131,15 @@ def main(opt):
                                                       augment=False,
                                                       visualize=False,
                                                       draw_image=original_image_copy)
-
+            if len(car_detections) > 0:
+                highest_car_confidence = max(car_detections, key=lambda x: x['conf'])
+                bbox_data = Float64MultiArray()
+                bbox_data.data = [highest_car_confidence['p1'][0],highest_car_confidence['p1'][1], highest_car_confidence['p2'][0], highest_car_confidence['p2'][1]]
+                yolov5_publisher.publish(bbox_data)
+            else:
+                bbox_data = Float64MultiArray()
+                bbox_data.data = []
+                yolov5_publisher.publish(bbox_data)
             print(f"Car detections: {car_detections}")
             end_time = time.time()
             fps = 1 / (end_time - start_time)
@@ -146,4 +165,5 @@ def main(opt):
 
 if __name__ == "__main__":
     opt = parse_args()
+    rospy.init_node('yolov5')
     main(opt)
