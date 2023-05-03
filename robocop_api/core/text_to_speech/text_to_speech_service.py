@@ -6,7 +6,8 @@ import io
 voice_id = 'HdHijm07A1ZXRVGHVvjs'
 url = f'https://api.elevenlabs.io/v1/text-to-speech/{voice_id}'
 api_key = os.getenv('API_KEY', default=None)
-
+if api_key is None:
+    raise Exception("Env variable 'API_KEY' not set.")
 # Define the headers
 headers = {
     'accept': 'audio/mpeg',

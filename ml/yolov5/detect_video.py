@@ -9,7 +9,8 @@ from utils.general import check_img_size, non_max_suppression, scale_coords
 from utils.plots import Annotator, colors
 from utils.torch_utils import select_device
 from std_msgs.msg import Float64MultiArray
-
+from ocr import ocr_plate
+from mongo_db import get_name_from_license_plate
 
 def load_model(weights_path,
                device,
@@ -71,7 +72,24 @@ def detect_objects(model,
 
     return annotator.result(), car_detections
 
+def send_tts(text, similarity, stability):
+    import requests
 
+    url = 'http://localhost:6300/tts'
+
+    params = {
+        'text': text,
+        'stability': stability,
+        'similarity': similarity
+    }
+
+    headers = {
+        'accept': 'application/json'
+    }
+
+    response = requests.post(url, params=params, headers=headers)
+
+    return response.content
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='runs/train/exp17/weights/best.pt', help='Initial weights path')
@@ -82,13 +100,19 @@ def parse_args():
     return opt
 
 
-class Yolov5Publisher:
+class Yolov5ROS:
     def __init__(self):
         self.publisher = rospy.Publisher('/robo_cop/yolov5/bounding_box', Float64MultiArray, queue_size=10)
+        self.subscriber = rospy.Subscriber('/robo_cop/pmd/distance_deviation', Float64MultiArray, self.callback)
+        self.distance = 5
+
+    def callback(self, data: Float64MultiArray):
+        self.distance = data.data[0]
 
 
 def main(opt):
-    yolov5_publisher = Yolov5Publisher().publisher
+    yolov5_ros = Yolov5ROS()
+    yolov5_publisher = yolov5_ros.publisher
 
     # define the computation device
     device = opt.device
@@ -106,52 +130,85 @@ def main(opt):
 
     frame_count = 0  # to count total frames
     total_fps = 0  # to get the final frames per second
-
+    last_time = None
+    plate_found = False
     # read until end of video
     while (cap.isOpened()):
         ret, img = cap.read()
-        img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        # img = cv2.imread('test_images/imtest1.jpeg')
-        # img = cv2.resize(img, (448,672))
-        original_image_copy = img.copy()
+        try:
+            img = cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            # img = cv2.imread('test_images/imtest1.jpeg')
+            # img = cv2.resize(img, (448,672))
+            original_image_copy = img.copy()
 
-        if ret:
-            # get the start time
-            start_time = time.time()
+            if ret:
+                # get the start time
+                start_time = time.time()
 
-            img = torch.from_numpy(img).to(device)
-            img = torch.movedim(img, 2, 0)
-            img = img.half() if half else img.float()  # uint8 to fp16/32
-            img = img / 255.0  # 0 - 255 to 0.0 - 1.0
-            if len(img.shape) == 3:
-                img = img[None]  # expand for batch dim
+                img = torch.from_numpy(img).to(device)
+                img = torch.movedim(img, 2, 0)
+                img = img.half() if half else img.float()  # uint8 to fp16/32
+                img = img / 255.0  # 0 - 255 to 0.0 - 1.0
+                if len(img.shape) == 3:
+                    img = img[None]  # expand for batch dim
 
-            img_view, car_detections = detect_objects(model=model,
-                                                      img=img,
-                                                      augment=False,
-                                                      visualize=False,
-                                                      draw_image=original_image_copy)
-            if len(car_detections) > 0:
-                highest_car_confidence = max(car_detections, key=lambda x: x['conf'])
-                bbox_data = Float64MultiArray()
-                bbox_data.data = [highest_car_confidence['p1'][0],highest_car_confidence['p1'][1], highest_car_confidence['p2'][0], highest_car_confidence['p2'][1]]
-                yolov5_publisher.publish(bbox_data)
-            else:
-                bbox_data = Float64MultiArray()
-                bbox_data.data = []
-                yolov5_publisher.publish(bbox_data)
-            print(f"Car detections: {car_detections}")
-            end_time = time.time()
-            fps = 1 / (end_time - start_time)
-            total_fps += fps
-            frame_count += 1
-            cv2.putText(img_view, f"{fps:.3f} FPS", (15, 30), cv2.FONT_HERSHEY_SIMPLEX,
-                        1, (0, 255, 0), 2)
+                img_view, car_detections = detect_objects(model=model,
+                                                          img=img,
+                                                          augment=False,
+                                                          visualize=False,
+                                                          draw_image=original_image_copy.copy())
+                bbox_region = []
+                if len(car_detections) > 0:
+                    highest_car_confidence = max(car_detections, key=lambda x: x['conf'])
+                    bbox_data = Float64MultiArray()
+                    x1 = highest_car_confidence['p1'][0]
+                    y1 = highest_car_confidence['p1'][1]
+                    x2 = highest_car_confidence['p2'][0]
+                    y2 = highest_car_confidence['p2'][1]
+                    bbox_data.data = [x1, y1, x2, y2]
+                    yolov5_publisher.publish(bbox_data)
 
-            cv2.imshow('image', img_view)
-            # press `q` to exit
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+                    if not plate_found and yolov5_ros.distance < 0.3:
+                    # if not plate_found and True:
+                        current_time = time.time()
+                        if last_time is None or (current_time - last_time) >= 10:
+                            bbox_region = original_image_copy[y1:y2, x1:x2]
+                            plate_number, confidence = ocr_plate(bbox_region.copy())
+                            print(f"Plate number is {plate_number} with confidence {confidence}")
+
+                            ## CHECK IF IN DB
+                            # IF IN DB
+                            name_from_license_plate = get_name_from_license_plate(plate_number)
+                            print(f"Name from license plate {name_from_license_plate}")
+                            if name_from_license_plate is not None:
+                                plate_found = True
+                                # RUN TTS
+                                response = send_tts(f"{name_from_license_plate} STOP RIGHT THERE !!! THIS IS THE POLICE !!!! PULL OVER IMMEDIATELY !!!!! RATATATAT",
+                                                    stability=0.4,
+                                                    similarity=1)
+                                print(f"Response from tts {response}")
+                            last_time = current_time
+
+                else:
+                    bbox_data = Float64MultiArray()
+                    bbox_data.data = []
+                    yolov5_publisher.publish(bbox_data)
+                # print(f"Car detections: {car_detections}")
+                end_time = time.time()
+                fps = 1 / (end_time - start_time)
+                total_fps += fps
+                frame_count += 1
+                cv2.putText(img_view, f"{fps:.3f} FPS", (15, 30), cv2.FONT_HERSHEY_SIMPLEX,
+                            1, (0, 255, 0), 2)
+
+                cv2.imshow('image', img_view)
+                # if len(bbox_region)>0:
+                #     cv2.imshow('bbox_region', bbox_region)
+                # press `q` to exit
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+        except:
+            continue
 
     # release VideoCapture()
     cap.release()
