@@ -164,6 +164,7 @@ include_directories(
 catkin_install_python(PROGRAMS
 src/speed_tracker_client.py
 src/speed_tracker_server.py
+src/camera/detect_video_pmd.py
 # src/control/encoder.py
 # src/control/fuzzy.py
 # src/control/robocop_motor.py
