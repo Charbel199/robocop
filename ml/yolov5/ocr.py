@@ -1,5 +1,4 @@
-
-
+from mongo_db import get_name_from_license_plate
 from paddleocr import PaddleOCR
 import cv2
 import numpy as np
@@ -35,4 +34,8 @@ def ocr_plate(plate_region):
 if __name__ == "__main__":
     img = cv2.imread('/home/charbel199/Downloads/plate2.jpeg')
     a, _ = ocr_plate(img)
-    print(a)
+    a = 'C3222'
+    print(f"License plate is {a}")
+
+    name_from_license_plate = get_name_from_license_plate(a)
+    print(f"Name from license plate is {name_from_license_plate if name_from_license_plate is not None else 'NOT FOUND' }")

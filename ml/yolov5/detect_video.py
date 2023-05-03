@@ -10,7 +10,7 @@ from utils.plots import Annotator, colors
 from utils.torch_utils import select_device
 from std_msgs.msg import Float64MultiArray
 from ocr import ocr_plate
-
+from mongo_db import get_name_from_license_plate
 
 def load_model(weights_path,
                device,
@@ -72,7 +72,24 @@ def detect_objects(model,
 
     return annotator.result(), car_detections
 
+def send_tts(text, similarity, stability):
+    import requests
 
+    url = 'http://localhost:6300/tts'
+
+    params = {
+        'text': text,
+        'stability': stability,
+        'similarity': similarity
+    }
+
+    headers = {
+        'accept': 'application/json'
+    }
+
+    response = requests.post(url, params=params, headers=headers)
+
+    return response.content
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='runs/train/exp17/weights/best.pt', help='Initial weights path')
@@ -152,24 +169,31 @@ def main(opt):
                     yolov5_publisher.publish(bbox_data)
 
                     if not plate_found and yolov5_ros.distance < 0.3:
+                    # if not plate_found and True:
                         current_time = time.time()
-                        if last_time is None or (current_time - last_time) >= 3:
+                        if last_time is None or (current_time - last_time) >= 10:
                             bbox_region = original_image_copy[y1:y2, x1:x2]
                             plate_number, confidence = ocr_plate(bbox_region.copy())
                             print(f"Plate number is {plate_number} with confidence {confidence}")
 
                             ## CHECK IF IN DB
                             # IF IN DB
-                            plate_found = True
-                            # RUN TTS
-
+                            name_from_license_plate = get_name_from_license_plate(plate_number)
+                            print(f"Name from license plate {name_from_license_plate}")
+                            if name_from_license_plate is not None:
+                                plate_found = True
+                                # RUN TTS
+                                response = send_tts(f"{name_from_license_plate} STOP RIGHT THERE !!! THIS IS THE POLICE !!!! PULL OVER IMMEDIATELY !!!!! RATATATAT",
+                                                    stability=0.4,
+                                                    similarity=1)
+                                print(f"Response from tts {response}")
                             last_time = current_time
 
                 else:
                     bbox_data = Float64MultiArray()
                     bbox_data.data = []
                     yolov5_publisher.publish(bbox_data)
-                print(f"Car detections: {car_detections}")
+                # print(f"Car detections: {car_detections}")
                 end_time = time.time()
                 fps = 1 / (end_time - start_time)
                 total_fps += fps
