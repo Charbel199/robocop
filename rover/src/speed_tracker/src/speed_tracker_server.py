@@ -53,6 +53,10 @@ class RoboCopServer:
       self.distance = data.data[0]
     if data.data[1] != -1:
       self.deviation = data.data[1]
+    if data.data[0] == -2:
+      self.distance = 0
+    if data.data[1] == -2:
+      self.deviation = 0
 
   def execute(self, goal):
     rospy.loginfo(f"Goal time is: {goal.time_stop}")
@@ -89,8 +93,8 @@ class RoboCopServer:
 
       self.feedback.distance = self.distance
       self.feedback.deviation = self.deviation
-      self.feedback.speed_left = speed1
-      self.feedback.speed_right = speed2
+      self.feedback.speed_left = l_motor_value
+      self.feedback.speed_right = r_motor_value
 
       self.server.publish_feedback(self.feedback)
 
