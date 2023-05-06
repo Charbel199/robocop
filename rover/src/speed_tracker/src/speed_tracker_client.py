@@ -8,7 +8,7 @@ import actionlib
 from std_msgs.msg import Float32
 from speed_tracker.msg import LaunchRoboCopAction, LaunchRoboCopGoal
 
-THRESHOLD = 3
+THRESHOLD = 0.4
 
 
 def feedback_log(feedback):

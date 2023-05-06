@@ -89,8 +89,8 @@ class RoboCopServer:
 
       self.feedback.distance = self.distance
       self.feedback.deviation = self.deviation
-      self.feedback.speed_left = l_motor_value
-      self.feedback.speed_right = r_motor_value
+      self.feedback.speed_left = speed1
+      self.feedback.speed_right = speed2
 
       self.server.publish_feedback(self.feedback)
 
