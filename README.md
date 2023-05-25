@@ -70,7 +70,7 @@ docker exec -it robocop bash
 rosrun speed_tracker detect_video_pmd.py
 ```
 
-### Speec tracker code on arduino
+### Speed tracker code on arduino
 
 To setup the Arduino (on the laptop where arduino is plugged in):
 ```bash
@@ -81,12 +81,12 @@ rosrun rosserial_arduino make_libraries.py .
 ```
 
 To run Arduino speed tracker node:
-Upload arduino code in robocop/speed_tracker/speed_tracker_infrared.ino to the arduino
+Upload the arduino code in robocop/speed_tracker/speed_tracker_infrared.ino to the Arduino through its IDE, then run:
 ```bash
 rosrun rosserial_python serial_node.py /dev/ttyACM0 _baud:=57600
 ```
 
-Finally, to enable override (can be run on any machine within the ROS network:
+Finally, to enable override (can be run on any machine within the ROS network):
 ```bash
 rosparam set /robo_cop/override 1
 ```
