@@ -21,7 +21,7 @@ git clone https://github.com/Charbel199/gm-robot-arm.git
 The **/ml** and **/robocop_api** codes should run on a local machine.
 The **/speed_tracker** code should run on an arduino. And the **/rover** code should run on the robocop's pi.
 
-For running the yolov5 model:
+### Yolov5 model:
 
 ```bash
 cd ml
@@ -30,7 +30,7 @@ python3 detect_video.py
 ```
 
 
-For running the robocop_api:
+### Robocop API
 
 ```bash
 cd robocop_api
@@ -38,11 +38,59 @@ docker build . -t robocop_api -f ./docker/Dockerfile
 docker run -p 6300:6300 robocop_api
 ```
 
-For running the rover code on the pi:
+### Rover code on Pi
+
+Building the docker image on the pi:
 
 ```bash
-TODO
+cd rover
+docker build -t robocop .
 ```
+
+
+Setting ROS_IP automatically to communicate with other devices:
+```bash
+export ROS_IP=$(hostname -I | awk '{print $1}')
+```
+
+Running the image:
+```bash
+docker-compose up -d
+```
+
+Launching the server:
+```bash
+docker exec -it robocop bash
+roslaunch speed_tracker speed_tracker.launch
+```
+
+On a separate terminal, to run the detection node:
+```bash
+docker exec -it robocop bash
+rosrun speed_tracker detect_video_pmd.py
+```
+
+### Speec tracker code on arduino
+
+To setup the Arduino (on the laptop where arduino is plugged in):
+```bash
+sudo apt-get install ros-${ROS_DISTRO}-rosserial-arduino
+sudo apt-get install ros-${ROS_DISTRO}-rosserial
+cd <path_to_arduino_libraries>
+rosrun rosserial_arduino make_libraries.py .
+```
+
+To run Arduino speed tracker node:
+Upload arduino code in robocop/speed_tracker/speed_tracker_infrared.ino to the arduino
+```bash
+rosrun rosserial_python serial_node.py /dev/ttyACM0 _baud:=57600
+```
+
+Finally, to enable override (can be run on any machine within the ROS network:
+```bash
+rosparam set /robo_cop/override 1
+```
+
 
 ## General architecture
 
@@ -51,6 +99,7 @@ For the general architecture of robocop, we make use of 4 main devices:
 - Server 1 (Personal Computer running Ubuntu 20.04)
 - Raspberry Pi 4B (Running Raspberry Pi OS)
 - Server 2 (Personal Computer running Ubuntu 20.04)
+
 
 ![](docs/general_archi.png)
 
