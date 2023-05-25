@@ -242,7 +242,10 @@ class MyListener(roypy.IDepthDataListener):
                 distance_dev_arr = Float64MultiArray()
                 distance_dev_arr.data = [distance, deviation]
                 self.publisher.publish(distance_dev_arr)
-
+        else:
+            distance_dev_arr = Float64MultiArray()
+            distance_dev_arr.data = [-2, -2]
+            self.publisher.publish(distance_dev_arr)
 
 
         end_time = time.time()

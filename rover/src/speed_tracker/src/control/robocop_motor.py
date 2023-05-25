@@ -14,8 +14,8 @@ class Motor:
             rospy.Subscriber("/robo_cop/teleop", teleop_robocop, self.cb)
 
         # Motors' GPIO Pins
-        MOTOR1_IN1_PIN = 5
-        MOTOR1_IN2_PIN = 6
+        MOTOR1_IN1_PIN = 13
+        MOTOR1_IN2_PIN = 19
         MOTOR1_ENABLE_PIN = 12
         MOTOR2_IN1_PIN = 4
         MOTOR2_IN2_PIN = 17

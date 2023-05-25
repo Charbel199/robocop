@@ -51,7 +51,12 @@ class RoboCopServer:
   def check_inputs(self, data):
     if data.data[0] != -1:
       self.distance = data.data[0]
+    if data.data[1] != -1:
       self.deviation = data.data[1]
+    if data.data[0] == -2:
+      self.distance = 0
+    if data.data[1] == -2:
+      self.deviation = 0
 
   def execute(self, goal):
     rospy.loginfo(f"Goal time is: {goal.time_stop}")
